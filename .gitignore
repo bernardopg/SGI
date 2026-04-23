@@ -1,0 +1,46 @@
+# Security / env
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+out/
+build/
+dist/
+
+# Rust / Tauri
+target/
+Cargo.lock
+src-tauri/target/
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Misc
+*.pem
+*.key
+*.cert
+credentials.json
+service_account.json
