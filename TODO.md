@@ -57,10 +57,16 @@ Prioridades para portar o `steam-game-idler` para Linux usando `steam-utility-mu
 
 ## P2 - empacotamento, CI e acabamento
 
-- [ ] Adaptar pipeline de CI para validar Windows e Linux
-- [ ] Ajustar empacotamento/distribuição para publicar artefatos Linux sem quebrar a release Windows
+- [x] Adaptar pipeline de CI para validar Windows e Linux
+      → `.github/workflows/ci.yml` novo: cargo check em ubuntu-22.04 + windows-latest a cada push/PR
+- [x] Ajustar empacotamento/distribuição para publicar artefatos Linux sem quebrar a release Windows
+      → `release.yml`: jobs `build_dotnet_linux` (SteamUtility.Cli self-contained) + `build_release_linux`
+        (.deb + AppImage + .sig); ambos correm em paralelo com Windows sem alterar o fluxo existente
+- [ ] Validação funcional da UI no Linux (ação do usuário — requer Tauri rodando com Steam ativo)
+      → próximo passo: rodar `./scripts/dev-linux.sh` e testar idle + achievements end-to-end
 - [ ] Revisar UX/mensagens de erro para diferenças entre Windows, Linux e Proton/Steam Runtime
 - [ ] Atualizar documentação pública de instalação, build e troubleshooting
+      → mínimo necessário: seção Linux no README com dependências do sistema e comando de instalação
 - [ ] Decidir a estratégia final de upstream/fork/submodule/vendor após a integração estabilizar
 
 ## P3 - melhorias futuras
