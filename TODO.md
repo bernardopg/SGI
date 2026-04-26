@@ -17,6 +17,8 @@ Prioridades para portar o `steam-game-idler` para Linux usando `steam-utility-mu
 - [x] Criar script `scripts/dev-linux.sh` para repetir o fluxo local
 - [x] Registrar a execução em `LINUX-DEV-RUNLOG.md`
 - [x] Registrar incidente de travamento do host em `INCIDENT-2026-04-23-HANG.md`
+- [x] Corrigir chamadas diretas de `invoke` no frontend usando wrapper Tauri centralizado
+- [x] Corrigir rota/tela de Depuração no Tauri Linux, sem depender de leitura via plugin `fs`
 
 ## Regras operacionais imediatas
 
@@ -62,8 +64,29 @@ Prioridades para portar o `steam-game-idler` para Linux usando `steam-utility-mu
 - [x] Ajustar empacotamento/distribuição para publicar artefatos Linux sem quebrar a release Windows
       → `release.yml`: jobs `build_dotnet_linux` (SteamUtility.Cli self-contained) + `build_release_linux`
         (.deb + AppImage + .sig); ambos correm em paralelo com Windows sem alterar o fluxo existente
-- [ ] Validação funcional da UI no Linux (ação do usuário — requer Tauri rodando com Steam ativo)
-      → próximo passo: rodar `./scripts/dev-linux.sh` e testar idle + achievements end-to-end
+- [x] Corrigir Tauri IPC no Linux (janela never showed)
+      → `tauri.conf.json`: removido `"useHttpsScheme": true` — causava mismatch de esquema HTTP/HTTPS com
+        WebKit2GTK impedindo a injeção de `window.__TAURI_INTERNALS__`
+- [x] Eliminar todos os erros de console no browser (localhost:3000)
+      → adicionado wrapper `src/shared/utils/tauri.ts`; imports de `invoke` redirecionados para ele;
+        guards em `logEvent`, `isPortableCheck`, `getAppVersion`, `ChangelogModal`, `HelpDesk`,
+        `useSignIn`, `useInit`, `useSteamMonitor`, `useContextMenu`, `useCheckForUpdates`;
+        `loading="eager"` no LCP image
+- [x] Corrigir permissões Tauri para Linux/macOS na capability desktop
+      → removido `"platforms": ["windows"]` de `src-tauri/capabilities/desktop.json`; as permissões
+        `core:default`, `fs:*`, `opener`, `notification`, `clipboard`, etc. agora valem para todos os OS
+- [x] Corrigir tela de Depuração / logs para todos os OS
+      → novo comando Tauri `read_log_file`; `clear_log_file` cria `log.txt` se ainda não existir;
+        `useLogs.ts` lê via IPC nativo e não mais via `@tauri-apps/plugin-fs`, evitando erros de permissão
+        e diferenças de path entre Windows/Linux/macOS
+- [x] Validação funcional da UI no Linux — janela Tauri desktop abre com Steam ativo
+      → BLOQUEIO RESOLVIDO: reiniciar `./scripts/dev-linux.sh` após fix do `useHttpsScheme`
+      → a janela inicia invisível e aparece após `emit('ready')` via IPC — só funciona na janela Tauri,
+        não no browser
+      → dados do Steam confirmados: loginusers.vdf presente com conta correta (76561198893709131 / Bitter ツ)
+      → janela confirmada em execução no Linux; próximo passo funcional é validar features específicas
+- [ ] Investigar/corrigir fundo preto na janela Tauri no Linux se compositor não estiver ativo
+      → `"transparent": true` + `"decorations": false` requer compositor GTK; sem ele o fundo fica preto
 - [ ] Revisar UX/mensagens de erro para diferenças entre Windows, Linux e Proton/Steam Runtime
 - [ ] Atualizar documentação pública de instalação, build e troubleshooting
       → mínimo necessário: seção Linux no README com dependências do sistema e comando de instalação
