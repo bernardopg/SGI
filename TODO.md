@@ -26,25 +26,34 @@ Prioridades para portar o `steam-game-idler` para Linux usando `steam-utility-mu
 
 ## P0 - obrigatório para começar o porte com segurança
 
-- [ ] Mapear todos os pontos Windows-only no backend Tauri/Rust do `steam-game-idler`
-- [ ] Catalogar onde o projeto assume `SteamUtility.exe`, `taskkill`, `explorer`, `CommandExt` e APIs Win32
-- [ ] Definir a estratégia de integração local entre `steam-game-idler` e `steam-utility-multiplataform`
-- [ ] Criar uma camada de resolução de caminho/nome do SteamUtility por plataforma
-- [ ] Criar uma camada de gerenciamento de processos por plataforma
-- [ ] Garantir que o fluxo atual de Windows continue funcionando após a abstração inicial
-- [ ] Ajustar o backend para compilar no Linux sem imports exclusivos de Windows vazando globalmente
-- [ ] Validar uma primeira execução local do SGI no Linux chamando o `steam-utility-multiplataform`
+- [x] Mapear todos os pontos Windows-only no backend Tauri/Rust do `steam-game-idler`
+- [x] Catalogar onde o projeto assume `SteamUtility.exe`, `taskkill`, `explorer`, `CommandExt` e APIs Win32
+- [x] Definir a estratégia de integração local entre `steam-game-idler` e `steam-utility-multiplataform`
+- [x] Criar uma camada de resolução de caminho/nome do SteamUtility por plataforma → `steam_utility.rs`
+- [x] Criar uma camada de gerenciamento de processos por plataforma → `command_runner.rs` + `process_handler.rs` via `SPAWNED_PROCESSES`
+- [x] Garantir que o fluxo atual de Windows continue funcionando após a abstração inicial
+- [x] Ajustar o backend para compilar no Linux sem imports exclusivos de Windows vazando globalmente
+      → `windows`/`winapi` movidos para `[target.'cfg(windows)'.dependencies]`; zero warnings no `cargo check`
+- [x] Validar uma primeira execução local do SGI no Linux chamando o `steam-utility-multiplataform`
 
 ## P1 - tornar o fluxo de desenvolvimento e build confiável
 
-- [ ] Substituir a dependência prática do submodule `libs` por uma estratégia de desenvolvimento local controlada
-- [ ] Definir como o binário/artefato do `steam-utility-multiplataform` será consumido pelo SGI em dev e em release
-- [ ] Ajustar scripts/documentação de build para Linux + Windows
-- [ ] Revisar requisitos do Tauri para Linux e documentar dependências do sistema
-- [ ] Corrigir o warning do Next.js/Turbopack sobre root inferido por lockfile externo
-- [ ] Adicionar validações mínimas para o caminho Linux sem perder cobertura de Windows
-- [ ] Revisar onde o frontend assume comportamentos específicos do ambiente Windows
-- [ ] Definir smoke tests de integração entre SGI e SteamUtility multiplataforma
+- [x] Substituir a dependência prática do submodule `libs` por uma estratégia de desenvolvimento local controlada
+      → `libs/README.md` placeholder satisfaz o glob; `SGI_STEAM_UTILITY_PATH` aponta para o binário real em dev
+- [x] Definir como o binário/artefato do `steam-utility-multiplataform` será consumido pelo SGI em dev e em release
+      → dev: `SGI_STEAM_UTILITY_PATH` via `scripts/dev-linux.sh`; release: `libs/SteamUtility.Cli` (documentado)
+- [x] Ajustar scripts/documentação de build para Linux + Windows
+      → `scripts/dev-linux.sh` e `scripts/smoke-test-linux.sh` criados; `tauri.conf.json` com ícones PNG e deb.depends
+- [x] Revisar requisitos do Tauri para Linux e documentar dependências do sistema
+      → `tauri.conf.json` `linux.deb.depends` populado com `libwebkit2gtk-4.1-0`, `libgtk-3-0`, `libssl3`, `libappindicator3-1`, `dotnet-runtime-10`
+- [x] Corrigir o warning do Next.js/Turbopack sobre root inferido por lockfile externo
+      → `next.config.mjs` adicionado com `turbopack: { root: __dirname }`
+- [x] Adicionar validações mínimas para o caminho Linux sem perder cobertura de Windows
+      → `steam_utility.rs` com testes unitários + `scripts/smoke-test-linux.sh` (5/5 passando)
+- [x] Revisar onde o frontend assume comportamentos específicos do ambiente Windows
+      → `useLogs.ts`: `\\log.txt` → `/log.txt`; `open_file_explorer` já normaliza separador no backend
+- [x] Definir smoke tests de integração entre SGI e SteamUtility multiplataforma
+      → `scripts/smoke-test-linux.sh`: binary check, --help, no-args, unknown cmd, cargo check
 
 ## P2 - empacotamento, CI e acabamento
 
