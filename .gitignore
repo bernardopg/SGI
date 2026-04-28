@@ -57,3 +57,5 @@ __pycache__/
 *.cert
 credentials.json
 service_account.json
+
+.obsidian/
