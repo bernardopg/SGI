@@ -1,93 +1,82 @@
 # SGI Workspace
 
-Workspace local para a evolução do Steam Game Idler rumo ao suporte multiplataforma, sem quebrar a experiência atual dos usuários Windows.
+Workspace de integração para evoluir o Steam Game Idler com suporte Linux sem quebrar o fluxo Windows.
 
-## Objetivo
-
-Transformar o `steam-game-idler` em um aplicativo realmente multiplataforma, usando como base o `steam-utility-multiplataform`, que já recebeu a maior parte do trabalho de portabilidade e modernização.
-
-## Estrutura criada
+## Estrutura remota
 
 ```text
-/home/bitter/git-clones/SGI/
+SGI/
 ├── steam-game-idler/
 └── steam-utility-multiplataform/
 ```
 
-## O que foi feito agora
+Os dois projetos filhos são mantidos como submodules Git:
 
-- o repositório local `steam-utility-multiplataform` foi movido de `/home/bitter/development/steam-utility-multiplataform` para este workspace;
-- o repositório original `zevnda/steam-game-idler` foi clonado ao lado;
-- o objetivo desta organização é trabalhar com os dois projetos lado a lado, com contexto completo e sem misturar tudo cedo demais.
+- `steam-game-idler` -> `https://github.com/bernardopg/steam-game-idler.git`
+- `steam-utility-multiplataform` -> `https://github.com/bernardopg/steam-utility-multiplataform.git`
 
-## Estado atual observado
+## Como clonar
 
-### steam-utility-multiplataform
+```bash
+git clone --recurse-submodules <repo-sgi>
+cd SGI
+```
 
-- já está em .NET 10;
-- já possui foco explícito em Linux + Windows;
-- já implementa autodetecção de plataforma, descoberta de Steam, Proton/compatdata e runtime nativo;
-- ainda possui alterações locais não commitadas que foram preservadas no movimento do diretório.
+Se o clone já existir:
 
-### steam-game-idler
+```bash
+git submodule update --init --recursive
+```
 
-O clone original ainda está fortemente orientado a Windows em pontos críticos do backend Tauri/Rust. Exemplos já identificados:
+## Rodando no Linux
 
-- uso de `std::os::windows::process::CommandExt`;
-- uso de `taskkill` para encerramento de processos;
-- uso de `explorer` para abrir diretórios;
-- resolução hardcoded de `libs/SteamUtility.exe`;
-- dependência do submodule `libs` apontando para `https://github.com/zevnda/steam-utility.git`;
-- documentação de build ainda assumindo `dotnet build ./libs/SteamUtility.csproj` e pré-requisitos Windows.
+O fluxo local usa o binário do `steam-utility-multiplataform` via `SGI_STEAM_UTILITY_PATH`.
 
-Isso confirma que a parte mais sensível agora não é o `steam-utility`, e sim a camada de integração do `steam-game-idler` com ele.
+```bash
+cd /home/bitter/git-clones/SGI
+./steam-game-idler/scripts/dev-linux.sh
+```
 
-## Melhor estratégia daqui para frente
+O script:
 
-A abordagem mais segura é incremental:
+- valida o binário `SteamUtility.Cli`;
+- encerra helpers `SteamUtility.Cli idle` órfãos;
+- limpa cache temporário de idlers;
+- limpa `.next/dev`;
+- sobe `tauri dev`.
 
-1. preservar o comportamento atual de Windows como baseline;
-2. trocar acoplamentos Windows-only por abstrações por plataforma no backend do `steam-game-idler`;
-3. permitir que o SGI consuma o `steam-utility-multiplataform` localmente durante o desenvolvimento;
-4. só depois ajustar build, empacotamento e distribuição Linux.
+## Estado atual
 
-## Decisões de arquitetura recomendadas
+### Concluído
 
-### 1. Não substituir tudo de uma vez
+- Backend Tauri compila no Linux.
+- `SteamUtility.Cli` multiplataforma é resolvido por plataforma/env var.
+- Farm de cartas no Linux usa diretórios temporários isolados por AppID, evitando alterações em `src-tauri/steam_appid.txt`.
+- Farm de cartas no Linux limita sessões Steam API simultâneas para reduzir pressão no IPC da Steam.
+- `next dev` roda com Webpack no app Tauri para evitar instabilidade do WebKit com Turbopack/HMR.
+- Menu de contexto customizado e notificações nativas ficam desativados em caminhos problemáticos de dev/Linux.
+- `/health` existe para readiness checks.
 
-Evitar uma migração “big bang”. O ideal é manter compatibilidade com Windows em cada etapa.
+### Validações recentes
 
-### 2. Desacoplar o caminho/binário do SteamUtility
+```bash
+cd steam-game-idler
+pnpm typecheck
+pnpm build
+cd src-tauri
+cargo check
+```
 
-Em vez de assumir `SteamUtility.exe`, o SGI deve resolver:
+Também foi validado manualmente que o farm de cartas roda por período prolongado no Linux sem o crash inicial observado.
 
-- nome do executável por plataforma;
-- caminho do binário empacotado;
-- caminho alternativo de desenvolvimento local.
+## Repositórios
 
-A melhor direção é criar uma camada de resolução do SteamUtility com fallback em ordem, por exemplo:
+- `steam-game-idler`: app Tauri/Next principal.
+- `steam-utility-multiplataform`: utilitário .NET responsável pela integração Steamworks multiplataforma.
 
-1. variável de ambiente/config de desenvolvimento;
-2. binário empacotado pelo app;
-3. caminho legado Windows, quando aplicável.
+## Princípios
 
-### 3. Isolar operações específicas de SO
-
-Matar processo, abrir explorador de arquivos, esconder janela, descobrir processos em execução e quaisquer flags específicas de criação de processo devem virar uma camada própria por plataforma.
-
-### 4. Manter o clone upstream limpo no começo
-
-Neste primeiro momento, o mais seguro é trabalhar com o `steam-game-idler` original clonado e documentar a integração com o `steam-utility-multiplataform`, em vez de já reestruturar submodules ou forçar mudanças grandes no layout do upstream.
-
-## Resultado esperado da próxima fase
-
-Ao final da fase inicial, o `steam-game-idler` deverá:
-
-- compilar no Linux;
-- localizar e executar o `steam-utility-multiplataform` corretamente;
-- preservar o fluxo atual de Windows;
-- ter uma base de código preparada para empacotamento multiplataforma.
-
-## Observação importante
-
-Este workspace é de desenvolvimento e integração. O objetivo aqui é provar a estratégia técnica com segurança antes de decidir como isso será publicado, forkado ou enviado upstream.
+1. Preservar Windows.
+2. Habilitar Linux incrementalmente.
+3. Manter a integração entre app e utilitário explícita e testável.
+4. Evitar dependência de estado gerado dentro de diretórios observados pelo `tauri dev`.

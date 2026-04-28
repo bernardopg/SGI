@@ -1,0 +1,7 @@
+[submodule "steam-game-idler"]
+	path = steam-game-idler
+	url = https://github.com/bernardopg/steam-game-idler.git
+
+[submodule "steam-utility-multiplataform"]
+	path = steam-utility-multiplataform
+	url = https://github.com/bernardopg/steam-utility-multiplataform.git

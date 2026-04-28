@@ -24,15 +24,27 @@ yarn-error.log*
 out/
 build/
 dist/
+next
+tauri
+steam-game-idler@*
 
 # Rust / Tauri
 target/
 Cargo.lock
 src-tauri/target/
+steam_appid.txt
+**/steam_appid.txt
+**/tsconfig.tsbuildinfo
 
 # Logs
 *.log
 logs/
+
+# Local runtime/cache
+.tmp/
+tmp/
+cache/
+artifacts/
 
 # Python
 __pycache__/

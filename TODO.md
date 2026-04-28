@@ -1,115 +1,77 @@
-# TODO - SGI Multiplataforma
+# TODO - SGI
 
-Prioridades para portar o `steam-game-idler` para Linux usando `steam-utility-multiplataform`, sem regressão para Windows.
+## Feito
 
-## Concluído agora
+- [x] Organizar workspace com a estrutura:
 
-- [x] Criar workspace `/home/bitter/git-clones/SGI`
-- [x] Mover `steam-utility-multiplataform` para dentro do workspace
-- [x] Clonar `zevnda/steam-game-idler`
-- [x] Documentar o contexto e a estratégia inicial em `README.md`
-- [x] Executar auditoria P0 dos pontos Windows-only no `steam-game-idler`
-- [x] Registrar a auditoria em `AUDIT-P0-WINDOWS-ONLY.md`
-- [x] Introduzir uma camada inicial de resolução do SteamUtility por plataforma
-- [x] Introduzir uma camada inicial de spawn/gerenciamento de processos sem `CommandExt` espalhado
-- [x] Fazer `cargo check` do backend Tauri/Rust passar no Linux
-- [x] Validar a primeira subida local do SGI no Linux usando `SGI_STEAM_UTILITY_PATH`
-- [x] Criar script `scripts/dev-linux.sh` para repetir o fluxo local
-- [x] Registrar a execução em `LINUX-DEV-RUNLOG.md`
-- [x] Registrar incidente de travamento do host em `INCIDENT-2026-04-23-HANG.md`
-- [x] Corrigir chamadas diretas de `invoke` no frontend usando wrapper Tauri centralizado
-- [x] Corrigir rota/tela de Depuração no Tauri Linux, sem depender de leitura via plugin `fs`
+  ```text
+  SGI/
+  ├── steam-game-idler/
+  └── steam-utility-multiplataform/
+  ```
 
-## Regras operacionais imediatas
+- [x] Registrar `steam-game-idler` e `steam-utility-multiplataform` como submodules no repo pai.
+- [x] Criar fluxo Linux local em `steam-game-idler/scripts/dev-linux.sh`.
+- [x] Resolver `SteamUtility.Cli` por plataforma/env var.
+- [x] Fazer o backend Tauri compilar no Linux.
+- [x] Corrigir o crash causado por alterações em `src-tauri/steam_appid.txt` durante o farm.
+- [x] Isolar cada processo de idle em diretório temporário próprio.
+- [x] Limpar helpers/diretórios temporários entre execuções.
+- [x] Limitar farm de cartas no Linux para 8 sessões Steam API simultâneas.
+- [x] Desativar caminhos instáveis no Linux/dev:
+  - notificações nativas no `tauri dev`;
+  - menu de contexto customizado via `Menu.popup()`;
+  - Turbopack no `next dev`.
+- [x] Adicionar `/health` para readiness checks.
+- [x] Validar:
+  - `pnpm typecheck`;
+  - `pnpm build`;
+  - `cargo check`;
+  - farm de cartas em execução prolongada no Linux.
 
-- nunca rodar `pnpm tauri dev` em background não supervisionado nesta máquina
-- preferir `cargo check` e `dotnet build` para progresso seguro
-- qualquer validação funcional via UI é responsabilidade direta do Bernardo até a máquina ser estabilizada
+## Próximas etapas imediatas
 
-## P0 - obrigatório para começar o porte com segurança
+- [ ] Fazer push dos commits dos submodules antes do commit/push do repo pai.
+- [ ] Criar/confirmar remoto do repo pai `SGI`.
+- [ ] Testar o fluxo completo após clone limpo com `git clone --recurse-submodules`.
+- [ ] Rodar o farm por uma janela maior, por exemplo 2 a 4 horas, monitorando:
+  - crash do WebKit;
+  - IPC da Steam;
+  - processos `SteamUtility.Cli` órfãos;
+  - limpeza de `/tmp/steam-game-idler`.
+- [ ] Definir se o limite Linux de 8 idlers será configuração do usuário ou constante por plataforma.
+- [ ] Investigar se o WebKit volta a ser estável com Turbopack em versões futuras do Next/Tauri/WebKitGTK.
 
-- [x] Mapear todos os pontos Windows-only no backend Tauri/Rust do `steam-game-idler`
-- [x] Catalogar onde o projeto assume `SteamUtility.exe`, `taskkill`, `explorer`, `CommandExt` e APIs Win32
-- [x] Definir a estratégia de integração local entre `steam-game-idler` e `steam-utility-multiplataform`
-- [x] Criar uma camada de resolução de caminho/nome do SteamUtility por plataforma → `steam_utility.rs`
-- [x] Criar uma camada de gerenciamento de processos por plataforma → `command_runner.rs` + `process_handler.rs` via `SPAWNED_PROCESSES`
-- [x] Garantir que o fluxo atual de Windows continue funcionando após a abstração inicial
-- [x] Ajustar o backend para compilar no Linux sem imports exclusivos de Windows vazando globalmente
-      → `windows`/`winapi` movidos para `[target.'cfg(windows)'.dependencies]`; zero warnings no `cargo check`
-- [x] Validar uma primeira execução local do SGI no Linux chamando o `steam-utility-multiplataform`
+## P1 - estabilização de release Linux
 
-## P1 - tornar o fluxo de desenvolvimento e build confiável
+- [ ] Documentar dependências Linux por distro.
+- [ ] Confirmar build `.deb` e AppImage com `SteamUtility.Cli` empacotado.
+- [ ] Verificar permissões Tauri em build instalado, não só `tauri dev`.
+- [ ] Testar instalação em ambiente limpo.
+- [ ] Revisar comportamento de tray, close-to-tray e notificações nativas fora do modo dev.
+- [ ] Garantir que `steam_appid.txt` gerado nunca fique em diretórios versionados/observados.
 
-- [x] Substituir a dependência prática do submodule `libs` por uma estratégia de desenvolvimento local controlada
-      → `libs/README.md` placeholder satisfaz o glob; `SGI_STEAM_UTILITY_PATH` aponta para o binário real em dev
-- [x] Definir como o binário/artefato do `steam-utility-multiplataform` será consumido pelo SGI em dev e em release
-      → dev: `SGI_STEAM_UTILITY_PATH` via `scripts/dev-linux.sh`; release: `libs/SteamUtility.Cli` (documentado)
-- [x] Ajustar scripts/documentação de build para Linux + Windows
-      → `scripts/dev-linux.sh` e `scripts/smoke-test-linux.sh` criados; `tauri.conf.json` com ícones PNG e deb.depends
-- [x] Revisar requisitos do Tauri para Linux e documentar dependências do sistema
-      → `tauri.conf.json` `linux.deb.depends` populado com `libwebkit2gtk-4.1-0`, `libgtk-3-0`, `libssl3`, `libappindicator3-1`, `dotnet-runtime-10`
-- [x] Corrigir o warning do Next.js/Turbopack sobre root inferido por lockfile externo
-      → `next.config.mjs` adicionado com `turbopack: { root: __dirname }`
-- [x] Adicionar validações mínimas para o caminho Linux sem perder cobertura de Windows
-      → `steam_utility.rs` com testes unitários + `scripts/smoke-test-linux.sh` (5/5 passando)
-- [x] Revisar onde o frontend assume comportamentos específicos do ambiente Windows
-      → `useLogs.ts`: `\\log.txt` → `/log.txt`; `open_file_explorer` já normaliza separador no backend
-- [x] Definir smoke tests de integração entre SGI e SteamUtility multiplataforma
-      → `scripts/smoke-test-linux.sh`: binary check, --help, no-args, unknown cmd, cargo check
+## P2 - integração SteamUtility
 
-## P2 - empacotamento, CI e acabamento
+- [ ] Criar contrato explícito entre SGI e `SteamUtility.Cli` para comandos e JSON.
+- [ ] Separar stdout JSON de logs nativos/Steam IPC para evitar parse quebrado.
+- [ ] Adicionar testes de integração para:
+  - `idle`;
+  - `check_ownership`;
+  - `get_achievement_data`;
+  - mutações de achievements/stats.
+- [ ] Decidir estratégia de versionamento entre app e utilitário.
 
-- [x] Adaptar pipeline de CI para validar Windows e Linux
-      → `.github/workflows/ci.yml` novo: cargo check em ubuntu-22.04 + windows-latest a cada push/PR
-- [x] Ajustar empacotamento/distribuição para publicar artefatos Linux sem quebrar a release Windows
-      → `release.yml`: jobs `build_dotnet_linux` (SteamUtility.Cli self-contained) + `build_release_linux`
-        (.deb + AppImage + .sig); ambos correm em paralelo com Windows sem alterar o fluxo existente
-- [x] Corrigir Tauri IPC no Linux (janela never showed)
-      → `tauri.conf.json`: removido `"useHttpsScheme": true` — causava mismatch de esquema HTTP/HTTPS com
-        WebKit2GTK impedindo a injeção de `window.__TAURI_INTERNALS__`
-- [x] Eliminar todos os erros de console no browser (localhost:3000)
-      → adicionado wrapper `src/shared/utils/tauri.ts`; imports de `invoke` redirecionados para ele;
-        guards em `logEvent`, `isPortableCheck`, `getAppVersion`, `ChangelogModal`, `HelpDesk`,
-        `useSignIn`, `useInit`, `useSteamMonitor`, `useContextMenu`, `useCheckForUpdates`;
-        `loading="eager"` no LCP image
-- [x] Corrigir permissões Tauri para Linux/macOS na capability desktop
-      → removido `"platforms": ["windows"]` de `src-tauri/capabilities/desktop.json`; as permissões
-        `core:default`, `fs:*`, `opener`, `notification`, `clipboard`, etc. agora valem para todos os OS
-- [x] Corrigir tela de Depuração / logs para todos os OS
-      → novo comando Tauri `read_log_file`; `clear_log_file` cria `log.txt` se ainda não existir;
-        `useLogs.ts` lê via IPC nativo e não mais via `@tauri-apps/plugin-fs`, evitando erros de permissão
-        e diferenças de path entre Windows/Linux/macOS
-- [x] Validação funcional da UI no Linux — janela Tauri desktop abre com Steam ativo
-      → BLOQUEIO RESOLVIDO: reiniciar `./scripts/dev-linux.sh` após fix do `useHttpsScheme`
-      → a janela inicia invisível e aparece após `emit('ready')` via IPC — só funciona na janela Tauri,
-        não no browser
-      → dados do Steam confirmados: loginusers.vdf presente com conta correta (76561198893709131 / Bitter ツ)
-      → janela confirmada em execução no Linux; próximo passo funcional é validar features específicas
-- [ ] Investigar/corrigir fundo preto na janela Tauri no Linux se compositor não estiver ativo
-      → `"transparent": true` + `"decorations": false` requer compositor GTK; sem ele o fundo fica preto
-- [ ] Revisar UX/mensagens de erro para diferenças entre Windows, Linux e Proton/Steam Runtime
-- [ ] Atualizar documentação pública de instalação, build e troubleshooting
-      → mínimo necessário: seção Linux no README com dependências do sistema e comando de instalação
-- [ ] Decidir a estratégia final de upstream/fork/submodule/vendor após a integração estabilizar
+## P3 - upstream e manutenção
 
-## P3 - melhorias futuras
+- [ ] Comparar branch/fork com upstream `zevnda/steam-game-idler`.
+- [ ] Separar PRs pequenos quando fizer sentido upstream.
+- [ ] Manter changelog de decisões Linux.
+- [ ] Automatizar CI do workspace pai com atualização de submodules.
 
-- [ ] Reduzir acoplamento entre SGI e o layout interno do SteamUtility
-- [ ] Criar um contrato de integração mais estável entre app e utilitário
-- [ ] Automatizar testes de regressão das features principais: idling, achievements, stats e ownership
-- [ ] Avaliar suporte adicional para outros ambientes no futuro, sem prometer macOS agora
+## Riscos
 
-## Riscos principais
-
-- regressão silenciosa para usuários Windows ao trocar o gerenciamento de processos;
-- dependência atual do SGI no nome fixo `SteamUtility.exe`;
-- diferenças de empacotamento Tauri entre Windows e Linux;
-- necessidade de manter compatibilidade com o comportamento esperado pelo projeto original do Zevnda.
-
-## Princípio guia
-
-Toda mudança deve seguir esta regra:
-
-1. não quebrar Windows;
-2. habilitar Linux de forma incremental;
-3. só depois refatorar o restante.
+- Regressão Windows por mudanças em gerenciamento de processos.
+- Instabilidade do WebKitGTK com APIs Tauri específicas.
+- Steam IPC ficar saturado com muitos jogos simultâneos.
+- Divergência entre versões do `steam-game-idler` e `steam-utility-multiplataform`.
