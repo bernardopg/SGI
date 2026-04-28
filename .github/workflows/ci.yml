@@ -72,5 +72,5 @@ jobs:
         run: |
           useradd -m builder
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          runuser -u builder -- bash -lc "cd '$GITHUB_WORKSPACE' && makepkg --printsrcinfo -p packaging/aur/PKGBUILD > /tmp/SRCINFO"
+          runuser -u builder -- bash -lc "cd '$GITHUB_WORKSPACE/packaging/aur' && makepkg --printsrcinfo > /tmp/SRCINFO"
           diff -u packaging/aur/.SRCINFO /tmp/SRCINFO
