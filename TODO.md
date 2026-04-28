@@ -28,12 +28,17 @@
   - `pnpm build`;
   - `cargo check`;
   - farm de cartas em execução prolongada no Linux.
+- [x] Preparar metadados AUR para `steam-game-idler-git`.
+- [x] Adicionar workflow de CI do workspace pai.
+- [x] Adicionar workflow de publicação AUR.
 
 ## Próximas etapas imediatas
 
 - [ ] Fazer push dos commits dos submodules antes do commit/push do repo pai.
 - [ ] Criar/confirmar remoto do repo pai `SGI`.
 - [ ] Testar o fluxo completo após clone limpo com `git clone --recurse-submodules`.
+- [ ] Configurar o secret `AUR_SSH_PRIVATE_KEY` no repo GitHub `SGI` para publicação automática no AUR.
+- [ ] Validar o build real do pacote AUR em um Arch limpo com `makepkg -si`.
 - [ ] Rodar o farm por uma janela maior, por exemplo 2 a 4 horas, monitorando:
   - crash do WebKit;
   - IPC da Steam;

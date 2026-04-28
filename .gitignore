@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.aur-ssh.env
 
 # IDE
 .vscode/

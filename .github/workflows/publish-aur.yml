@@ -1,0 +1,43 @@
+name: Publish AUR package
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - packaging/aur/**
+      - steam-game-idler
+      - steam-utility-multiplataform
+
+concurrency:
+  group: aur-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish steam-game-idler-git
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AUR SSH
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$AUR_SSH_PRIVATE_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<'EOF'
+          Host aur.archlinux.org
+            User aur
+            IdentityFile ~/.ssh/aur
+            IdentitiesOnly yes
+          EOF
+
+      - name: Publish to AUR
+        run: |
+          AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  workspace:
+    name: Workspace checks
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        working-directory: steam-game-idler
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck frontend
+        working-directory: steam-game-idler
+        run: pnpm typecheck
+
+      - name: Check Tauri backend
+        working-directory: steam-game-idler/src-tauri
+        run: cargo check
+
+  aur-metadata:
+    name: AUR metadata
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install validation tools
+        run: |
+          pacman -Syu --noconfirm --needed git base-devel pacman-contrib
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate .SRCINFO
+        run: |
+          makepkg --printsrcinfo -p packaging/aur/PKGBUILD > /tmp/SRCINFO
+          diff -u packaging/aur/.SRCINFO /tmp/SRCINFO

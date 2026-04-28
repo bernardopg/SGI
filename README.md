@@ -74,6 +74,26 @@ Também foi validado manualmente que o farm de cartas roda por período prolonga
 - `steam-game-idler`: app Tauri/Next principal.
 - `steam-utility-multiplataform`: utilitário .NET responsável pela integração Steamworks multiplataforma.
 
+## AUR
+
+O pacote AUR é publicado como `steam-game-idler-git`.
+
+Arquivos de distribuição:
+
+- `packaging/aur/PKGBUILD`
+- `packaging/aur/.SRCINFO`
+- `.github/workflows/publish-aur.yml`
+
+O PKGBUILD usa o repo `SGI` na branch `master`, inicializa os submodules, compila o `SteamUtility.Cli`, gera o bundle `.deb` pelo Tauri e instala o conteúdo extraído no pacote Arch.
+
+Publicação local:
+
+```bash
+AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh
+```
+
+Publicação pelo GitHub Actions requer o secret `AUR_SSH_PRIVATE_KEY`.
+
 ## Princípios
 
 1. Preservar Windows.
