@@ -38,7 +38,7 @@
 - [x] Push submodule commits before committing/pushing the parent repo.
 - [x] Test full flow after a clean clone with `git clone --recurse-submodules`.
 - [x] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
-- [ ] Validate the real AUR package build on a clean Arch environment with `makepkg -si`.
+- [x] Validate the real AUR package build on a clean Arch environment with `makepkg -si`. (confirmed in `archlinux:base-devel` container on 2026-04-28; package built and installed as `steam-game-idler-git 5.0.4.r1711.g56b6b4d2-1`)
 - [ ] Run card farming for a longer window (2–4 hours), monitoring:
   - WebKit crashes;
   - Steam IPC;
