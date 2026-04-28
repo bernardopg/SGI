@@ -36,7 +36,7 @@
 ## Immediate next steps
 
 - [x] Push submodule commits before committing/pushing the parent repo.
-- [ ] Test full flow after a clean clone with `git clone --recurse-submodules`.
+- [x] Test full flow after a clean clone with `git clone --recurse-submodules`.
 - [x] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
 - [ ] Validate the real AUR package build on a clean Arch environment with `makepkg -si`.
 - [ ] Run card farming for a longer window (2–4 hours), monitoring:
