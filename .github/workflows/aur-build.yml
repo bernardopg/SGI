@@ -1,0 +1,92 @@
+name: AUR package build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'packaging/aur/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aur-build:
+    name: Build and install AUR package
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Configure pacman mirrors
+        run: |
+          printf 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch\nServer = https://mirror.rackspace.com/archlinux/$repo/os/$arch\n' \
+            > /etc/pacman.d/mirrorlist
+          sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
+          grep -q DisableDownloadTimeout /etc/pacman.conf \
+            || echo DisableDownloadTimeout >> /etc/pacman.conf
+
+      - name: System update + base-devel + git
+        run: pacman -Syu --noconfirm --needed base-devel git sudo
+
+      - name: Install makedepends
+        run: pacman -S --noconfirm --needed cargo rust nodejs pnpm dotnet-sdk
+
+      - name: Install Tauri system dependencies
+        run: |
+          pacman -S --noconfirm --needed \
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up builder user
+        run: |
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+          mkdir -p /build
+          cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO /build/
+          chown -R builder /build
+
+      - name: Build package
+        run: |
+          sudo -u builder bash -c "
+            cd /build
+            makepkg -d --noconfirm --noprogressbar
+          "
+
+      - name: Install package
+        run: |
+          pkg=$(ls /build/steam-game-idler-git-*.pkg.tar.zst 2>/dev/null | head -1)
+          if [[ -z "$pkg" ]]; then
+            echo "ERROR: no .pkg.tar.zst found"
+            ls -la /build/
+            exit 1
+          fi
+          echo "Package: $(ls -lh "$pkg")"
+          pacman -U --noconfirm "$pkg"
+
+      - name: Verify installation
+        run: |
+          echo "=== Installed files ==="
+          pacman -Ql steam-game-idler-git
+
+          echo "=== Binary check ==="
+          bin=$(pacman -Ql steam-game-idler-git | awk '/\/usr\/bin\// { print $2 }' | head -1)
+          if [[ -n "$bin" ]]; then
+            echo "OK: $bin"
+            ls -lh "$bin"
+          else
+            echo "ERROR: no binary found under /usr/bin"
+            exit 1
+          fi
+
+          echo "=== Desktop file check ==="
+          desktop=$(pacman -Ql steam-game-idler-git | awk '/\.desktop$/ { print $2 }' | head -1)
+          test -n "$desktop" && echo "OK: $desktop" || echo "WARNING: no .desktop file found"
+
+          echo "=== SteamUtility.Cli check ==="
+          cli=$(pacman -Ql steam-game-idler-git | awk '/SteamUtility\.Cli/ { print $2 }' | head -1)
+          test -n "$cli" && echo "OK: $cli" || { echo "ERROR: SteamUtility.Cli not found in package"; exit 1; }
