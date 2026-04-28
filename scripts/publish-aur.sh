@@ -12,7 +12,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-git clone "$AUR_REMOTE" "$WORK_DIR/$AUR_PACKAGE" 2>/dev/null || git init "$WORK_DIR/$AUR_PACKAGE"
+git clone "$AUR_REMOTE" "$WORK_DIR/$AUR_PACKAGE" 2>/dev/null || git init -b master "$WORK_DIR/$AUR_PACKAGE"
 
 cd "$WORK_DIR/$AUR_PACKAGE"
 if ! git remote get-url origin >/dev/null 2>&1; then
@@ -30,4 +30,4 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "Update ${AUR_PACKAGE}"
-git push origin master
+git push origin HEAD:master
