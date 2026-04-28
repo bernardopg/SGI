@@ -1,13 +1,34 @@
 # SGI Workspace
 
+[![CI][ci-badge]][ci-url]
+[![AUR Publish][aur-badge]][aur-url]
+[![SGI][sgi-badge]][sgi-releases]
+[![steam-game-idler][app-badge]][app-url]
+[![steam-utility][utility-badge]][utility-url]
+[![Linux][linux-badge]][sgi-releases]
+[![Windows][windows-badge]][app-url]
+
 Integration workspace for evolving Steam Game Idler with Linux support without breaking the Windows workflow.
+
+[ci-badge]: https://github.com/bernardopg/SGI/actions/workflows/ci.yml/badge.svg?branch=master
+[ci-url]: https://github.com/bernardopg/SGI/actions/workflows/ci.yml
+[aur-badge]: https://github.com/bernardopg/SGI/actions/workflows/publish-aur.yml/badge.svg
+[aur-url]: https://github.com/bernardopg/SGI/actions/workflows/publish-aur.yml
+[sgi-badge]: https://img.shields.io/github/v/release/bernardopg/SGI?display_name=tag&sort=semver&style=flat-square&color=%232d6acc&label=SGI
+[sgi-releases]: https://github.com/bernardopg/SGI/releases
+[app-badge]: https://img.shields.io/github/v/release/zevnda/steam-game-idler?display_name=tag&sort=semver&style=flat-square&color=%23a82869&label=steam-game-idler
+[app-url]: https://github.com/bernardopg/steam-game-idler
+[utility-badge]: https://img.shields.io/github/v/release/bernardopg/steam-utility-multiplataform?display_name=tag&sort=semver&style=flat-square&color=%23512BD4&label=steam-utility
+[utility-url]: https://github.com/bernardopg/steam-utility-multiplataform/releases
+[linux-badge]: https://img.shields.io/badge/Linux-supported-FCC624?style=flat-square&logo=linux&logoColor=black
+[windows-badge]: https://img.shields.io/badge/Windows-supported-0078D6?style=flat-square&logo=windows11&logoColor=white
 
 ## Structure
 
 ```text
 SGI/
-├── steam-game-idler/
-└── steam-utility-multiplataform/
+├── steam-game-idler/              # Main Tauri/Next.js app (fork of zevnda/steam-game-idler)
+└── steam-utility-multiplataform/  # Cross-platform .NET 10 Steamworks CLI
 ```
 
 Both child projects are maintained as Git submodules:
@@ -18,7 +39,7 @@ Both child projects are maintained as Git submodules:
 ## Cloning
 
 ```bash
-git clone --recurse-submodules <repo-sgi>
+git clone --recurse-submodules https://github.com/bernardopg/SGI.git
 cd SGI
 ```
 
@@ -30,10 +51,17 @@ git submodule update --init --recursive
 
 ## Running on Linux
 
-The local workflow uses the `steam-utility-multiplataform` binary via `SGI_STEAM_UTILITY_PATH`.
+Build the Steam CLI backend first:
 
 ```bash
-cd /home/bitter/git-clones/SGI
+cd steam-utility-multiplataform
+dotnet build steam-utility-multiplataform.sln -c Release
+cd ..
+```
+
+Then start the app:
+
+```bash
 ./steam-game-idler/scripts/dev-linux.sh
 ```
 
@@ -41,42 +69,30 @@ The script:
 
 - validates the `SteamUtility.Cli` binary;
 - kills orphan `SteamUtility.Cli idle` helpers;
-- clears the temporary idler cache;
-- clears `.next/dev`;
-- starts `tauri dev`.
+- clears the temporary idler cache and `.next/dev`;
+- sources `.env.dev`;
+- starts `pnpm tauri dev` with Webpack.
 
 ## Status
 
-### Done
-
 - Tauri backend compiles on Linux.
-- `SteamUtility.Cli` is resolved per platform/env var.
+- `SteamUtility.Cli` is resolved per platform/env var (`SGI_STEAM_UTILITY_PATH` → `src-tauri/libs/` fallback).
 - Card farming on Linux uses isolated temporary directories per AppID, avoiding changes to `src-tauri/steam_appid.txt`.
-- Card farming on Linux limits concurrent Steam API sessions to reduce Steam IPC pressure.
+- Card farming on Linux limits concurrent Steam API sessions to 8 (vs. 32 on Windows) to reduce Steam IPC pressure.
 - `next dev` runs with Webpack inside the Tauri app to avoid WebKitGTK instability with Turbopack/HMR.
 - Custom context menu and native notifications are disabled on problematic dev/Linux paths.
 - `/health` endpoint exists for readiness checks.
 
-### Recent validations
-
-```bash
-cd steam-game-idler
-pnpm typecheck
-pnpm build
-cd src-tauri
-cargo check
-```
-
-Manual validation confirmed that card farming runs for an extended period on Linux without the initial crash.
-
 ## Repositories
 
-- `steam-game-idler`: main Tauri/Next.js app.
-- `steam-utility-multiplataform`: .NET utility responsible for cross-platform Steamworks integration.
+| Repo | Role |
+|---|---|
+| [bernardopg/steam-game-idler](https://github.com/bernardopg/steam-game-idler) | Main Tauri/Next.js app — fork of [zevnda/steam-game-idler](https://github.com/zevnda/steam-game-idler) with Linux support |
+| [bernardopg/steam-utility-multiplataform](https://github.com/bernardopg/steam-utility-multiplataform) | Cross-platform .NET 10 CLI for Steamworks operations |
 
 ## AUR
 
-The AUR package is published as `steam-game-idler-git`.
+The AUR package is published as [`steam-game-idler-git`](https://aur.archlinux.org/packages/steam-game-idler-git).
 
 Distribution files:
 

@@ -35,9 +35,9 @@
 
 ## Immediate next steps
 
-- [ ] Push submodule commits before committing/pushing the parent repo.
+- [x] Push submodule commits before committing/pushing the parent repo.
 - [ ] Test full flow after a clean clone with `git clone --recurse-submodules`.
-- [ ] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
+- [x] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
 - [ ] Validate the real AUR package build on a clean Arch environment with `makepkg -si`.
 - [ ] Run card farming for a longer window (2–4 hours), monitoring:
   - WebKit crashes;
@@ -59,9 +59,9 @@
 
 ## Bugs to fix in `release.yml`
 
-- [ ] `pnpm/action-setup@v3` → `@v4` in `build_release_bundle` and `build_release_linux` (CI already uses `@v4`).
-- [ ] `version: latest` → `10` in pnpm setup for both jobs (`latest` can break builds on a pnpm major release).
-- [ ] `build_dotnet_linux` checks out HEAD of the `steam-utility-multiplataform` default branch without respecting the SHA pinned in the SGI submodule — the published binary can diverge from the tested version. Added `utility_ref` input (defaults to `main`) as a first step; long-term, wire up the pinned submodule SHA.
+- [x] `pnpm/action-setup@v3` → `@v4` in `build_release_bundle` and `build_release_linux`.
+- [x] `version: latest` → `10` in pnpm setup for both jobs.
+- [ ] `build_dotnet_linux` always checks out HEAD of `steam-utility-multiplataform` default branch — added `utility_ref` input (defaults to `main`) as a first step; long-term, wire up the pinned submodule SHA automatically.
 
 ## P2 - SteamUtility integration
 
