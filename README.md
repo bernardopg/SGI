@@ -1,8 +1,8 @@
 # SGI Workspace
 
-Workspace de integração para evoluir o Steam Game Idler com suporte Linux sem quebrar o fluxo Windows.
+Integration workspace for evolving Steam Game Idler with Linux support without breaking the Windows workflow.
 
-## Estrutura remota
+## Structure
 
 ```text
 SGI/
@@ -10,54 +10,54 @@ SGI/
 └── steam-utility-multiplataform/
 ```
 
-Os dois projetos filhos são mantidos como submodules Git:
+Both child projects are maintained as Git submodules:
 
-- `steam-game-idler` -> `https://github.com/bernardopg/steam-game-idler.git`
-- `steam-utility-multiplataform` -> `https://github.com/bernardopg/steam-utility-multiplataform.git`
+- `steam-game-idler` → `https://github.com/bernardopg/steam-game-idler.git`
+- `steam-utility-multiplataform` → `https://github.com/bernardopg/steam-utility-multiplataform.git`
 
-## Como clonar
+## Cloning
 
 ```bash
 git clone --recurse-submodules <repo-sgi>
 cd SGI
 ```
 
-Se o clone já existir:
+If the clone already exists:
 
 ```bash
 git submodule update --init --recursive
 ```
 
-## Rodando no Linux
+## Running on Linux
 
-O fluxo local usa o binário do `steam-utility-multiplataform` via `SGI_STEAM_UTILITY_PATH`.
+The local workflow uses the `steam-utility-multiplataform` binary via `SGI_STEAM_UTILITY_PATH`.
 
 ```bash
 cd /home/bitter/git-clones/SGI
 ./steam-game-idler/scripts/dev-linux.sh
 ```
 
-O script:
+The script:
 
-- valida o binário `SteamUtility.Cli`;
-- encerra helpers `SteamUtility.Cli idle` órfãos;
-- limpa cache temporário de idlers;
-- limpa `.next/dev`;
-- sobe `tauri dev`.
+- validates the `SteamUtility.Cli` binary;
+- kills orphan `SteamUtility.Cli idle` helpers;
+- clears the temporary idler cache;
+- clears `.next/dev`;
+- starts `tauri dev`.
 
-## Estado atual
+## Status
 
-### Concluído
+### Done
 
-- Backend Tauri compila no Linux.
-- `SteamUtility.Cli` multiplataforma é resolvido por plataforma/env var.
-- Farm de cartas no Linux usa diretórios temporários isolados por AppID, evitando alterações em `src-tauri/steam_appid.txt`.
-- Farm de cartas no Linux limita sessões Steam API simultâneas para reduzir pressão no IPC da Steam.
-- `next dev` roda com Webpack no app Tauri para evitar instabilidade do WebKit com Turbopack/HMR.
-- Menu de contexto customizado e notificações nativas ficam desativados em caminhos problemáticos de dev/Linux.
-- `/health` existe para readiness checks.
+- Tauri backend compiles on Linux.
+- `SteamUtility.Cli` is resolved per platform/env var.
+- Card farming on Linux uses isolated temporary directories per AppID, avoiding changes to `src-tauri/steam_appid.txt`.
+- Card farming on Linux limits concurrent Steam API sessions to reduce Steam IPC pressure.
+- `next dev` runs with Webpack inside the Tauri app to avoid WebKitGTK instability with Turbopack/HMR.
+- Custom context menu and native notifications are disabled on problematic dev/Linux paths.
+- `/health` endpoint exists for readiness checks.
 
-### Validações recentes
+### Recent validations
 
 ```bash
 cd steam-game-idler
@@ -67,36 +67,36 @@ cd src-tauri
 cargo check
 ```
 
-Também foi validado manualmente que o farm de cartas roda por período prolongado no Linux sem o crash inicial observado.
+Manual validation confirmed that card farming runs for an extended period on Linux without the initial crash.
 
-## Repositórios
+## Repositories
 
-- `steam-game-idler`: app Tauri/Next principal.
-- `steam-utility-multiplataform`: utilitário .NET responsável pela integração Steamworks multiplataforma.
+- `steam-game-idler`: main Tauri/Next.js app.
+- `steam-utility-multiplataform`: .NET utility responsible for cross-platform Steamworks integration.
 
 ## AUR
 
-O pacote AUR é publicado como `steam-game-idler-git`.
+The AUR package is published as `steam-game-idler-git`.
 
-Arquivos de distribuição:
+Distribution files:
 
 - `packaging/aur/PKGBUILD`
 - `packaging/aur/.SRCINFO`
 - `.github/workflows/publish-aur.yml`
 
-O PKGBUILD usa o repo `SGI` na branch `master`, inicializa os submodules, compila o `SteamUtility.Cli`, gera o bundle `.deb` pelo Tauri e instala o conteúdo extraído no pacote Arch.
+The PKGBUILD uses the `SGI` repo on the `master` branch, initializes submodules, compiles `SteamUtility.Cli`, generates the `.deb` bundle via Tauri, and installs the extracted contents into the Arch package.
 
-Publicação local:
+Local publish:
 
 ```bash
 AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh
 ```
 
-Publicação pelo GitHub Actions requer o secret `AUR_SSH_PRIVATE_KEY`.
+Publishing via GitHub Actions requires the `AUR_SSH_PRIVATE_KEY` secret.
 
-## Princípios
+## Principles
 
-1. Preservar Windows.
-2. Habilitar Linux incrementalmente.
-3. Manter a integração entre app e utilitário explícita e testável.
-4. Evitar dependência de estado gerado dentro de diretórios observados pelo `tauri dev`.
+1. Preserve Windows.
+2. Enable Linux incrementally.
+3. Keep the integration between the app and the utility explicit and testable.
+4. Avoid dependency on state generated inside directories watched by `tauri dev`.

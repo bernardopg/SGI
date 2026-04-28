@@ -1,8 +1,8 @@
 # TODO - SGI
 
-## Feito
+## Done
 
-- [x] Organizar workspace com a estrutura:
+- [x] Organize workspace with the structure:
 
   ```text
   SGI/
@@ -10,73 +10,80 @@
   └── steam-utility-multiplataform/
   ```
 
-- [x] Registrar `steam-game-idler` e `steam-utility-multiplataform` como submodules no repo pai.
-- [x] Criar fluxo Linux local em `steam-game-idler/scripts/dev-linux.sh`.
-- [x] Resolver `SteamUtility.Cli` por plataforma/env var.
-- [x] Fazer o backend Tauri compilar no Linux.
-- [x] Corrigir o crash causado por alterações em `src-tauri/steam_appid.txt` durante o farm.
-- [x] Isolar cada processo de idle em diretório temporário próprio.
-- [x] Limpar helpers/diretórios temporários entre execuções.
-- [x] Limitar farm de cartas no Linux para 8 sessões Steam API simultâneas.
-- [x] Desativar caminhos instáveis no Linux/dev:
-  - notificações nativas no `tauri dev`;
-  - menu de contexto customizado via `Menu.popup()`;
-  - Turbopack no `next dev`.
-- [x] Adicionar `/health` para readiness checks.
-- [x] Validar:
+- [x] Register `steam-game-idler` and `steam-utility-multiplataform` as submodules in the parent repo.
+- [x] Create Linux local workflow at `steam-game-idler/scripts/dev-linux.sh`.
+- [x] Resolve `SteamUtility.Cli` per platform/env var.
+- [x] Make the Tauri backend compile on Linux.
+- [x] Fix crash caused by changes to `src-tauri/steam_appid.txt` during card farming.
+- [x] Isolate each idle process in its own temporary directory.
+- [x] Clean up helpers/temporary directories between runs.
+- [x] Limit card farming on Linux to 8 concurrent Steam API sessions.
+- [x] Disable unstable paths on Linux/dev:
+  - native notifications in `tauri dev`;
+  - custom context menu via `Menu.popup()`;
+  - Turbopack in `next dev`.
+- [x] Add `/health` for readiness checks.
+- [x] Validate:
   - `pnpm typecheck`;
   - `pnpm build`;
   - `cargo check`;
-  - farm de cartas em execução prolongada no Linux.
-- [x] Preparar metadados AUR para `steam-game-idler-git`.
-- [x] Adicionar workflow de CI do workspace pai.
-- [x] Adicionar workflow de publicação AUR.
+  - extended card farming run on Linux.
+- [x] Prepare AUR metadata for `steam-game-idler-git`.
+- [x] Add CI workflow for the parent workspace.
+- [x] Add AUR publish workflow.
+- [x] Create/confirm remote for the parent `SGI` repo. (repo `bernardopg/SGI` active; CI and AUR confirmed)
 
-## Próximas etapas imediatas
+## Immediate next steps
 
-- [ ] Fazer push dos commits dos submodules antes do commit/push do repo pai.
-- [ ] Criar/confirmar remoto do repo pai `SGI`.
-- [ ] Testar o fluxo completo após clone limpo com `git clone --recurse-submodules`.
-- [ ] Configurar o secret `AUR_SSH_PRIVATE_KEY` no repo GitHub `SGI` para publicação automática no AUR.
-- [ ] Validar o build real do pacote AUR em um Arch limpo com `makepkg -si`.
-- [ ] Rodar o farm por uma janela maior, por exemplo 2 a 4 horas, monitorando:
-  - crash do WebKit;
-  - IPC da Steam;
-  - processos `SteamUtility.Cli` órfãos;
-  - limpeza de `/tmp/steam-game-idler`.
-- [ ] Definir se o limite Linux de 8 idlers será configuração do usuário ou constante por plataforma.
-- [ ] Investigar se o WebKit volta a ser estável com Turbopack em versões futuras do Next/Tauri/WebKitGTK.
+- [ ] Push submodule commits before committing/pushing the parent repo.
+- [ ] Test full flow after a clean clone with `git clone --recurse-submodules`.
+- [ ] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
+- [ ] Validate the real AUR package build on a clean Arch environment with `makepkg -si`.
+- [ ] Run card farming for a longer window (2–4 hours), monitoring:
+  - WebKit crashes;
+  - Steam IPC;
+  - orphan `SteamUtility.Cli` processes;
+  - `/tmp/steam-game-idler` cleanup.
+- [ ] Decide whether the Linux 8-idler limit will be a user setting or a per-platform constant.
+- [ ] Investigate whether WebKit becomes stable with Turbopack in future Next/Tauri/WebKitGTK versions.
 
-## P1 - estabilização de release Linux
+## P1 - Linux release stabilization
 
-- [ ] Documentar dependências Linux por distro.
-- [ ] Confirmar build `.deb` e AppImage com `SteamUtility.Cli` empacotado.
-- [ ] Verificar permissões Tauri em build instalado, não só `tauri dev`.
-- [ ] Testar instalação em ambiente limpo.
-- [ ] Revisar comportamento de tray, close-to-tray e notificações nativas fora do modo dev.
-- [ ] Garantir que `steam_appid.txt` gerado nunca fique em diretórios versionados/observados.
+- [ ] Document Linux dependencies per distro.
+- [x] Confirm `.deb` and AppImage build with `SteamUtility.Cli` bundled. (`build_release_linux` job added to `release.yml`)
+- [ ] Validate an actual `build_release_linux` run on a test release.
+- [ ] Verify Tauri permissions on an installed build, not just `tauri dev`.
+- [ ] Test installation on a clean environment.
+- [ ] Review tray, close-to-tray, and native notification behavior outside dev mode.
+- [ ] Ensure generated `steam_appid.txt` never lands in versioned/watched directories.
 
-## P2 - integração SteamUtility
+## Bugs to fix in `release.yml`
 
-- [ ] Criar contrato explícito entre SGI e `SteamUtility.Cli` para comandos e JSON.
-- [ ] Separar stdout JSON de logs nativos/Steam IPC para evitar parse quebrado.
-- [ ] Adicionar testes de integração para:
+- [ ] `pnpm/action-setup@v3` → `@v4` in `build_release_bundle` and `build_release_linux` (CI already uses `@v4`).
+- [ ] `version: latest` → `10` in pnpm setup for both jobs (`latest` can break builds on a pnpm major release).
+- [ ] `build_dotnet_linux` checks out HEAD of the `steam-utility-multiplataform` default branch without respecting the SHA pinned in the SGI submodule — the published binary can diverge from the tested version. Added `utility_ref` input (defaults to `main`) as a first step; long-term, wire up the pinned submodule SHA.
+
+## P2 - SteamUtility integration
+
+- [ ] Create an explicit contract between SGI and `SteamUtility.Cli` for commands and JSON.
+- [ ] Separate stdout JSON from native/Steam IPC logs to avoid broken parsing.
+- [ ] Add integration tests for:
   - `idle`;
   - `check_ownership`;
   - `get_achievement_data`;
-  - mutações de achievements/stats.
-- [ ] Decidir estratégia de versionamento entre app e utilitário.
+  - achievement/stats mutations.
+- [ ] Decide versioning strategy between the app and the utility.
 
-## P3 - upstream e manutenção
+## P3 - upstream and maintenance
 
-- [ ] Comparar branch/fork com upstream `zevnda/steam-game-idler`.
-- [ ] Separar PRs pequenos quando fizer sentido upstream.
-- [ ] Manter changelog de decisões Linux.
-- [ ] Automatizar CI do workspace pai com atualização de submodules.
+- [ ] Compare branch/fork with upstream `zevnda/steam-game-idler`.
+- [ ] Split small PRs where it makes sense upstream.
+- [ ] Keep a changelog of Linux decisions.
+- [ ] Automate CI in the parent workspace with submodule updates.
 
-## Riscos
+## Risks
 
-- Regressão Windows por mudanças em gerenciamento de processos.
-- Instabilidade do WebKitGTK com APIs Tauri específicas.
-- Steam IPC ficar saturado com muitos jogos simultâneos.
-- Divergência entre versões do `steam-game-idler` e `steam-utility-multiplataform`.
+- Windows regression from changes in process management.
+- WebKitGTK instability with specific Tauri APIs.
+- Steam IPC saturation with many simultaneous games.
+- Version divergence between `steam-game-idler` and `steam-utility-multiplataform`.
