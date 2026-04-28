@@ -6,6 +6,11 @@ on:
     branches: [master]
     paths:
       - 'packaging/aur/**'
+      - 'steam-game-idler/**'
+      - 'steam-utility-multiplataform/**'
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
