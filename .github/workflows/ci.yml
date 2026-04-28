@@ -38,6 +38,8 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -68,5 +70,7 @@ jobs:
 
       - name: Validate .SRCINFO
         run: |
-          makepkg --printsrcinfo -p packaging/aur/PKGBUILD > /tmp/SRCINFO
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- bash -lc "cd '$GITHUB_WORKSPACE' && makepkg --printsrcinfo -p packaging/aur/PKGBUILD > /tmp/SRCINFO"
           diff -u packaging/aur/.SRCINFO /tmp/SRCINFO
