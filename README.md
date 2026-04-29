@@ -110,6 +110,20 @@ AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh
 
 Publishing via GitHub Actions requires the `AUR_SSH_PRIVATE_KEY` secret.
 
+## Release
+
+The parent `SGI` release workflow is the authoritative packaged release path. Push a `vX.Y.Z` tag from the parent repository after both submodules have been committed and the parent has recorded their new SHAs.
+
+The release workflow builds and attaches:
+
+- Linux `.deb`, `.rpm`, and `.AppImage` bundles
+- Windows NSIS installer and portable zip
+- AUR `PKGBUILD`, `.SRCINFO`, and built `.pkg.tar.zst`
+- vendored `sgi-<version>-source.tar.gz`
+- `SHA256SUMS`
+
+It also publishes the pinned AUR metadata when `AUR_SSH_PRIVATE_KEY` is configured.
+
 ## Principles
 
 1. Preserve Windows.

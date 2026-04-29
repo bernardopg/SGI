@@ -32,6 +32,10 @@
 - [x] Add CI workflow for the parent workspace.
 - [x] Add AUR publish workflow.
 - [x] Create/confirm remote for the parent `SGI` repo. (repo `bernardopg/SGI` active; CI and AUR confirmed)
+- [x] Add parent release workflow for SGI and validate it locally.
+- [x] Push parent CI/release automation to `origin/master` and confirm GitHub Actions success. (`b29ec87`, CI run `25126274686`)
+- [x] Decide that the Linux idler cap stays as a per-platform constant for now. (8 on Linux, 32 on Windows; documented in README/CLAUDE and hard-coded in `idling.rs`)
+- [x] Keep Turbopack disabled for Linux/dev until there is a future Next/Tauri/WebKitGTK stability reason to revisit it. (`next dev --webpack` remains mandatory for Tauri dev WebView)
 
 ## Immediate next steps
 
@@ -39,18 +43,17 @@
 - [x] Test full flow after a clean clone with `git clone --recurse-submodules`.
 - [x] Configure the `AUR_SSH_PRIVATE_KEY` secret in the `SGI` GitHub repo for automated AUR publishing.
 - [x] Validate the real AUR package build on a clean Arch environment with `makepkg -si`. (confirmed in `archlinux:base-devel` container on 2026-04-28; package built and installed as `steam-game-idler-git 5.0.4.r1711.g56b6b4d2-1`)
-- [ ] Run card farming for a longer window (2–4 hours), monitoring:
+- [x] Close the immediate Linux stabilization decisions: keep the 8-idler cap as a per-platform constant, keep Webpack for Linux/dev, and move the live 2–4h card-farming soak test to P1 because it requires an interactive Steam session.
+
+## P1 - Linux release stabilization
+
+- [ ] Run a live card-farming soak test for 2–4 hours on a real Steam session, monitoring:
   - WebKit crashes;
   - Steam IPC;
   - orphan `SteamUtility.Cli` processes;
   - `/tmp/steam-game-idler` cleanup.
-- [ ] Decide whether the Linux 8-idler limit will be a user setting or a per-platform constant.
-- [ ] Investigate whether WebKit becomes stable with Turbopack in future Next/Tauri/WebKitGTK versions.
-
-## P1 - Linux release stabilization
-
 - [ ] Document Linux dependencies per distro.
-- [x] Confirm `.deb` and AppImage build with `SteamUtility.Cli` bundled. (`build_release_linux` job added to `release.yml`)
+- [x] Confirm `.deb`, `.rpm`, and AppImage build paths with `SteamUtility.Cli` bundled. (`build_release_linux` job added to `release.yml`)
 - [ ] Validate an actual `build_release_linux` run on a test release.
 - [ ] Verify Tauri permissions on an installed build, not just `tauri dev`.
 - [ ] Test installation on a clean environment.
@@ -79,7 +82,8 @@
 - [ ] Compare branch/fork with upstream `zevnda/steam-game-idler`.
 - [ ] Split small PRs where it makes sense upstream.
 - [ ] Keep a changelog of Linux decisions.
-- [ ] Automate CI in the parent workspace with submodule updates.
+- [x] Automate CI in the parent workspace with submodule updates. (parent CI/release automation committed in `b29ec87`; CI run `25126274686` passed)
+- [ ] Periodically re-check whether Turbopack is stable inside the Tauri/WebKitGTK dev WebView after future Next/Tauri/WebKitGTK upgrades.
 
 ## Risks
 
