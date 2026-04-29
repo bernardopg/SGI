@@ -219,7 +219,7 @@ jobs:
           ls -la
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: steamutility-${{ matrix.runtime }}
           path: steam-utility-multiplataform/artifacts/${{ matrix.output_name }}
@@ -337,7 +337,7 @@ jobs:
           ls -lh stage/
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-bundle
           path: stage/*
@@ -425,7 +425,7 @@ jobs:
           Get-ChildItem $stage | Format-Table Name,Length
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-bundle
           path: stage/*
@@ -545,7 +545,7 @@ jobs:
           ! grep -qE '^StartupWMClass=".*"' "$desktop"
 
       - name: Upload AUR artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aur-bundle
           path: |
@@ -591,7 +591,7 @@ jobs:
 
           ls -lh "stage/${name}.tar.gz"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: source-tarball
           path: stage/*.tar.gz
