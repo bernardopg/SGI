@@ -219,7 +219,7 @@ jobs:
           ls -la
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: steamutility-${{ matrix.runtime }}
           path: steam-utility-multiplataform/artifacts/${{ matrix.output_name }}
@@ -268,7 +268,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.Cli (linux-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: steamutility-linux-x64
           path: steam-game-idler/src-tauri/libs
@@ -337,7 +337,7 @@ jobs:
           ls -lh stage/
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: linux-bundle
           path: stage/*
@@ -372,7 +372,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.exe (win-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
           name: steamutility-win-x64
           path: steam-game-idler/src-tauri/libs
@@ -425,7 +425,7 @@ jobs:
           Get-ChildItem $stage | Format-Table Name,Length
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: windows-bundle
           path: stage/*
@@ -503,7 +503,7 @@ jobs:
           # Point the source line at the exact commit being released so the
           # AUR build is reproducible from this PKGBUILD without depending on
           # mutable `branch=master`. Keep .SRCINFO in lockstep with PKGBUILD.
-          sha=$(git rev-parse HEAD)
+          sha="${GITHUB_SHA}"
           source_url="git+https://github.com/${GITHUB_REPOSITORY}.git#commit=${sha}"
           sed -i -E "s|^source=.*|source=('${source_url}')|" /build/PKGBUILD
           sed -i -E "s|^\tsource = .*|\tsource = ${source_url}|" /build/.SRCINFO
@@ -545,7 +545,7 @@ jobs:
           ! grep -qE '^StartupWMClass=".*"' "$desktop"
 
       - name: Upload AUR artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: aur-bundle
           path: |
@@ -591,7 +591,7 @@ jobs:
 
           ls -lh "stage/${name}.tar.gz"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7.0.1
         with:
           name: source-tarball
           path: stage/*.tar.gz
@@ -608,7 +608,7 @@ jobs:
     if: needs.prepare.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.1
         with:
           name: aur-bundle
           path: aur-staged
@@ -683,7 +683,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8.0.1
         with:
           path: artifacts
 
