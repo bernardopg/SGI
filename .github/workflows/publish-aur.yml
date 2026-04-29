@@ -24,6 +24,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
+        with:
+          # publish-aur.sh reads tauri.conf.json + git history of the
+          # steam-game-idler submodule to compute the dynamic pkgver.
+          submodules: recursive
+          # rev-list --count needs full history.
+          fetch-depth: 0
 
       - name: Configure AUR SSH
         env:

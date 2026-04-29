@@ -69,7 +69,7 @@ jobs:
           pacman -Syu --noconfirm --needed git base-devel pacman-contrib
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Validate .SRCINFO
         run: |

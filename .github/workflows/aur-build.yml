@@ -37,7 +37,8 @@ jobs:
         run: pacman -Syu --noconfirm --needed base-devel git sudo
 
       - name: Install makedepends
-        run: pacman -S --noconfirm --needed cargo rust nodejs pnpm dotnet-sdk
+        # `rust` already provides `cargo`; listing both is redundant.
+        run: pacman -S --noconfirm --needed rust nodejs pnpm dotnet-sdk
 
       - name: Install Tauri system dependencies
         run: |
@@ -45,7 +46,7 @@ jobs:
             webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: Set up builder user
         run: |
@@ -75,23 +76,51 @@ jobs:
 
       - name: Verify installation
         run: |
+          set -e
+
           echo "=== Installed files ==="
           pacman -Ql steam-game-idler-git
 
           echo "=== Binary check ==="
-          bin=$(pacman -Ql steam-game-idler-git | awk '/\/usr\/bin\// { print $2 }' | head -1)
-          if [[ -n "$bin" ]]; then
-            echo "OK: $bin"
-            ls -lh "$bin"
-          else
-            echo "ERROR: no binary found under /usr/bin"
+          # The package() step renames /usr/bin/Steam Game Idler -> /usr/bin/steam-game-idler.
+          # Fail loudly if a path with literal spaces sneaks in.
+          if pacman -Ql steam-game-idler-git | awk '{$1=""; print substr($0,2)}' | grep -E '^/usr/(bin|lib)/Steam Game Idler' ; then
+            echo "ERROR: package still contains /usr/bin or /usr/lib paths with spaces"
             exit 1
           fi
 
+          bin=/usr/bin/steam-game-idler
+          if [[ ! -x "$bin" ]]; then
+            echo "ERROR: $bin missing or not executable"
+            exit 1
+          fi
+          ls -lh "$bin"
+
           echo "=== Desktop file check ==="
-          desktop=$(pacman -Ql steam-game-idler-git | awk '/\.desktop$/ { print $2 }' | head -1)
-          test -n "$desktop" && echo "OK: $desktop" || echo "WARNING: no .desktop file found"
+          desktop=/usr/share/applications/steam-game-idler.desktop
+          if [[ ! -f "$desktop" ]]; then
+            echo "ERROR: $desktop missing"
+            exit 1
+          fi
+          # Exec= must point to the renamed binary, never to "Steam Game Idler".
+          if ! grep -q '^Exec=/usr/bin/steam-game-idler' "$desktop"; then
+            echo "ERROR: $desktop has wrong Exec="
+            cat "$desktop"
+            exit 1
+          fi
+
+          echo "=== Icon check ==="
+          icon=/usr/share/icons/hicolor/128x128/apps/steam-game-idler.png
+          test -f "$icon" || { echo "ERROR: $icon missing"; exit 1; }
 
           echo "=== SteamUtility.Cli check ==="
-          cli=$(pacman -Ql steam-game-idler-git | awk '/SteamUtility\.Cli/ { print $2 }' | head -1)
-          test -n "$cli" && echo "OK: $cli" || { echo "ERROR: SteamUtility.Cli not found in package"; exit 1; }
+          cli=/usr/lib/steam-game-idler/libs/SteamUtility.Cli
+          if [[ ! -x "$cli" ]]; then
+            echo "ERROR: $cli missing or not executable"
+            exit 1
+          fi
+
+          echo "=== SteamUtility.Cli smoke test ==="
+          # `detect` runs without a live Steam session and prints the install dir
+          # (or a friendly "no install found" — both are fine here).
+          "$cli" detect || true
