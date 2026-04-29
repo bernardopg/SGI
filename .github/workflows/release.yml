@@ -268,7 +268,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.Cli (linux-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: steamutility-linux-x64
           path: steam-game-idler/src-tauri/libs
@@ -372,7 +372,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.exe (win-x64)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: steamutility-win-x64
           path: steam-game-idler/src-tauri/libs
@@ -608,7 +608,7 @@ jobs:
     if: needs.prepare.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: aur-bundle
           path: aur-staged
@@ -683,7 +683,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
