@@ -58,5 +58,6 @@ __pycache__/
 credentials.json
 service_account.json
 
+# Personal / app data
 .obsidian/
 .claude/

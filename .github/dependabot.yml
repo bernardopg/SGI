@@ -1,0 +1,24 @@
+version: 2
+
+updates:
+  # Keep GitHub Actions versions current. The parent SGI workspace uses pinned
+  # action SHAs/tags (actions/checkout@v6.0.2, pnpm/action-setup@v6.0.3, etc.);
+  # Dependabot opens PRs when newer compatible versions are published.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      # Group routine action bumps into one PR per week to reduce review noise.
+      actions-minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

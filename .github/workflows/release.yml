@@ -1,0 +1,748 @@
+name: Release
+
+# Orchestrated release pipeline for the whole SGI workspace.
+#
+# Trigger:
+#   - push of a tag matching v*.*.*  (e.g. v5.0.5)
+#   - manual workflow_dispatch (pass the version explicitly)
+#
+# What it produces, all on the SGI parent's GitHub release page:
+#   Linux        deb  rpm  AppImage
+#   Windows      .exe (NSIS installer)  .zip (portable)
+#   AUR          PKGBUILD  .SRCINFO  .pkg.tar.zst
+#   Source       sgi-<version>-source.tar.gz (SGI + both submodules at HEAD)
+#
+# It also pushes the matching PKGBUILD / .SRCINFO to the AUR git repo so
+# `yay -S steam-game-idler-git` resolves to the same version as the release.
+#
+# Secrets:
+#   AUR_SSH_PRIVATE_KEY        required to push to AUR (skipped on dry_run)
+#   TAURI_SIGNING_PRIVATE_KEY  optional, signs the Tauri updater bundles
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  optional, password for above
+#
+# The production panic in src-tauri/src/lib.rs ("No obfuscated API key…") is
+# patched out the same way the PKGBUILD does it, so distribution binaries
+# launch without a build-time KEY secret. Users configure their own Steam Web
+# API key in the app's Settings panel.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver version (e.g. 5.0.5) — without leading 'v'"
+        required: true
+      dry_run:
+        description: "Build everything but skip AUR push and GitHub release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24"
+  PNPM_VERSION: "10"
+  DOTNET_VERSION: "10.0.x"
+  RUST_TOOLCHAIN: "stable"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Resolve the target version once. Every downstream job reads it from outputs.
+  # ---------------------------------------------------------------------------
+  prepare:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      should_publish: ${{ steps.resolve.outputs.should_publish }}
+    steps:
+      - name: Resolve version + tag
+        id: resolve
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+            version="${tag#v}"
+            should_publish=true
+          else
+            version="${{ inputs.version }}"
+            tag="v${version}"
+            if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+              should_publish=false
+            else
+              should_publish=true
+            fi
+          fi
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::version '$version' is not a valid semver"
+            exit 1
+          fi
+
+          {
+            echo "version=$version"
+            echo "tag=$tag"
+            echo "should_publish=$should_publish"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::notice::release version=$version tag=$tag publish=$should_publish"
+
+  # ---------------------------------------------------------------------------
+  # Re-run the cheap CI checks. This is the gate the user described as
+  # "passar no CI" — release jobs only start once these pass.
+  # ---------------------------------------------------------------------------
+  ci_gate:
+    name: CI gate (typecheck + cargo check + .SRCINFO)
+    needs: prepare
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - name: Install Tauri system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v6.0.3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: "steam-game-idler/src-tauri -> target"
+
+      - name: Frontend install + typecheck
+        working-directory: steam-game-idler
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm typecheck
+
+      - name: cargo check
+        working-directory: steam-game-idler/src-tauri
+        run: cargo check
+
+      - name: Validate .SRCINFO matches PKGBUILD
+        run: |
+          # Run makepkg --printsrcinfo in an Arch container so we don't
+          # require pacman/makepkg on the ubuntu runner.
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/work \
+            -w /work/packaging/aur \
+            archlinux:latest bash -lc '
+              pacman -Sy --noconfirm --needed base-devel git >/dev/null
+              useradd -m b
+              chown -R b:b /work
+              runuser -u b -- bash -lc "makepkg --printsrcinfo > /tmp/SRCINFO"
+              diff -u .SRCINFO /tmp/SRCINFO
+            '
+
+  # ---------------------------------------------------------------------------
+  # Build SteamUtility.Cli once per target platform from the cross-platform
+  # source. The Windows artifact is renamed to SteamUtility.exe on disk so the
+  # Rust resolver in steam-game-idler/src-tauri/src/steam_utility.rs finds it
+  # without code changes (it expects "SteamUtility.exe" on Windows targets).
+  # ---------------------------------------------------------------------------
+  build_steamutility:
+    name: Build SteamUtility (${{ matrix.runtime }})
+    needs: [prepare, ci_gate]
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: linux-x64
+            runner: ubuntu-22.04
+            output_name: SteamUtility.Cli
+          - runtime: win-x64
+            runner: windows-latest
+            output_name: SteamUtility.exe
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v5.2.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        working-directory: steam-utility-multiplataform
+        run: dotnet restore src/SteamUtility.Cli/SteamUtility.Cli.csproj -r ${{ matrix.runtime }}
+
+      - name: Publish single-file
+        working-directory: steam-utility-multiplataform
+        shell: bash
+        run: |
+          dotnet publish src/SteamUtility.Cli/SteamUtility.Cli.csproj \
+            -c Release \
+            -r ${{ matrix.runtime }} \
+            --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:DebugType=None \
+            -p:DebugSymbols=false \
+            --no-restore \
+            -o artifacts
+
+      - name: Normalize binary name
+        shell: bash
+        working-directory: steam-utility-multiplataform/artifacts
+        run: |
+          # On Linux the bundle ships SteamUtility.Cli already.
+          # On Windows dotnet emits SteamUtility.Cli.exe; rename to SteamUtility.exe
+          # so steam-game-idler's Rust resolver finds it without changes.
+          if [[ -f SteamUtility.Cli.exe ]]; then
+            mv SteamUtility.Cli.exe SteamUtility.exe
+          fi
+          ls -la
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: steamutility-${{ matrix.runtime }}
+          path: steam-utility-multiplataform/artifacts/${{ matrix.output_name }}
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Linux Tauri bundle: .deb, .rpm, .AppImage.
+  # ---------------------------------------------------------------------------
+  build_linux_bundle:
+    name: Tauri bundle (Linux)
+    needs: [prepare, build_steamutility]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - name: Install Tauri + bundler system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libssl-dev \
+            libgtk-3-dev \
+            libsoup-3.0-dev \
+            libjavascriptcoregtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            squashfs-tools \
+            patchelf \
+            rpm
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v6.0.3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: "steam-game-idler/src-tauri -> target"
+
+      - name: Download SteamUtility.Cli (linux-x64)
+        uses: actions/download-artifact@v4
+        with:
+          name: steamutility-linux-x64
+          path: steam-game-idler/src-tauri/libs
+
+      - name: Make SteamUtility.Cli executable
+        run: chmod +x steam-game-idler/src-tauri/libs/SteamUtility.Cli
+
+      - name: Pin tauri.conf.json version + disable updater + drop API panic
+        working-directory: steam-game-idler
+        run: |
+          set -euo pipefail
+          version="${{ needs.prepare.outputs.version }}"
+          # version
+          sed -i -E 's/"version":[[:space:]]*"[^"]*"/"version": "'"$version"'"/' \
+            src-tauri/tauri.conf.json
+          # updater disabled (we don't have a signing key in this workflow path)
+          sed -i 's/"createUpdaterArtifacts":[[:space:]]*"[^"]*"/"createUpdaterArtifacts": false/' \
+            src-tauri/tauri.conf.json
+          # match the AUR PKGBUILD: replace the production panic so the binary
+          # launches without an embedded Steam Web API key.
+          sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
+            src-tauri/src/lib.rs
+          grep '"version"' src-tauri/tauri.conf.json | head -1
+          grep '"createUpdaterArtifacts"' src-tauri/tauri.conf.json
+
+      - name: Frontend install
+        working-directory: steam-game-idler
+        run: pnpm install --frozen-lockfile
+
+      - name: Tauri build (deb + rpm + appimage)
+        working-directory: steam-game-idler
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          TAURI_CI: "1"
+          # Thin LTO is the released-build standard; fat LTO needs >10 GB RAM.
+          CARGO_PROFILE_RELEASE_LTO: thin
+        run: pnpm tauri build --bundles deb,rpm,appimage
+
+      - name: Stage release artifacts with friendly names
+        run: |
+          set -euo pipefail
+          version="${{ needs.prepare.outputs.version }}"
+          mkdir -p stage
+          # tauri-bundler produces filenames containing spaces ("Steam Game
+          # Idler_5.0.4_amd64.deb"); normalise to lowercase-hyphenated.
+          shopt -s nullglob
+
+          for src in steam-game-idler/src-tauri/target/release/bundle/deb/*.deb; do
+            cp "$src" "stage/steam-game-idler_${version}_amd64.deb"
+          done
+          for src in steam-game-idler/src-tauri/target/release/bundle/rpm/*.rpm; do
+            cp "$src" "stage/steam-game-idler-${version}-1.x86_64.rpm"
+          done
+          for src in steam-game-idler/src-tauri/target/release/bundle/appimage/*.AppImage; do
+            cp "$src" "stage/steam-game-idler_${version}_amd64.AppImage"
+          done
+
+          for expected in \
+            "steam-game-idler_${version}_amd64.deb" \
+            "steam-game-idler-${version}-1.x86_64.rpm" \
+            "steam-game-idler_${version}_amd64.AppImage"; do
+            test -f "stage/${expected}" || { echo "::error::missing ${expected}"; exit 1; }
+          done
+
+          echo "=== staged ==="
+          ls -lh stage/
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-bundle
+          path: stage/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Windows Tauri bundle: NSIS .exe installer + portable .zip.
+  # ---------------------------------------------------------------------------
+  build_windows_bundle:
+    name: Tauri bundle (Windows)
+    needs: [prepare, build_steamutility]
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v6.0.3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: "steam-game-idler/src-tauri -> target"
+
+      - name: Download SteamUtility.exe (win-x64)
+        uses: actions/download-artifact@v4
+        with:
+          name: steamutility-win-x64
+          path: steam-game-idler/src-tauri/libs
+
+      - name: Pin version + disable updater + drop API panic
+        working-directory: steam-game-idler
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ needs.prepare.outputs.version }}"
+          sed -i -E 's/"version":[[:space:]]*"[^"]*"/"version": "'"$version"'"/' \
+            src-tauri/tauri.conf.json
+          sed -i 's/"createUpdaterArtifacts":[[:space:]]*"[^"]*"/"createUpdaterArtifacts": false/' \
+            src-tauri/tauri.conf.json
+          sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
+            src-tauri/src/lib.rs
+
+      - name: Frontend install
+        working-directory: steam-game-idler
+        run: pnpm install --frozen-lockfile
+
+      - name: Tauri build (NSIS)
+        working-directory: steam-game-idler
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          TAURI_CI: "1"
+          CARGO_PROFILE_RELEASE_LTO: thin
+        run: pnpm tauri build --bundles nsis
+
+      - name: Stage NSIS installer + portable zip
+        shell: pwsh
+        run: |
+          $version = "${{ needs.prepare.outputs.version }}"
+          $stage = New-Item -ItemType Directory -Force -Path stage
+
+          # NSIS installer (filename has spaces from productName; rename).
+          $nsis = Get-ChildItem -Path "steam-game-idler/src-tauri/target/release/bundle/nsis" -Filter "*.exe" | Select-Object -First 1
+          if (-not $nsis) { throw "No NSIS .exe produced" }
+          Copy-Item $nsis.FullName "$stage/steam-game-idler_${version}_x64-setup.exe"
+
+          # Portable layout: exe + libs + LICENSE in a zip.
+          $portable = New-Item -ItemType Directory -Force -Path "portable-stage"
+          Copy-Item "steam-game-idler/src-tauri/target/release/Steam Game Idler.exe" "$portable/Steam Game Idler.exe"
+          Copy-Item "steam-game-idler/src-tauri/libs" "$portable/libs" -Recurse
+          Copy-Item "steam-game-idler/LICENSE" "$portable/LICENSE"
+          # Mark portable so is_portable() returns true (no .installed marker).
+          Compress-Archive -Path "$portable/*" -DestinationPath "$stage/steam-game-idler_${version}_x64-portable.zip" -Force
+          Remove-Item -Recurse -Force $portable
+
+          Get-ChildItem $stage | Format-Table Name,Length
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-bundle
+          path: stage/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # AUR build: produces the .pkg.tar.zst + the PKGBUILD/.SRCINFO that will be
+  # uploaded to the release page AND pushed to the AUR git repo. We pin the
+  # version to match the GitHub release so AUR users on -git get a build that
+  # tracks the tagged commit.
+  # ---------------------------------------------------------------------------
+  build_aur:
+    name: AUR package
+    needs: [prepare, ci_gate]
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    timeout-minutes: 90
+    outputs:
+      pkgver: ${{ steps.pkgver.outputs.pkgver }}
+    steps:
+      - name: Configure pacman
+        run: |
+          sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
+          grep -q DisableDownloadTimeout /etc/pacman.conf \
+            || echo DisableDownloadTimeout >> /etc/pacman.conf
+
+      - name: System update + base-devel
+        run: pacman -Syu --noconfirm --needed base-devel git sudo
+
+      - name: Install makedepends + Tauri system deps
+        run: |
+          # `rust` already provides cargo.
+          pacman -S --noconfirm --needed \
+            rust nodejs pnpm dotnet-sdk \
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
+
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Compute pkgver from this commit
+        id: pkgver
+        shell: bash
+        run: |
+          set -euo pipefail
+          appver="${{ needs.prepare.outputs.version }}"
+          rev=$(git -C steam-game-idler rev-list --count HEAD)
+          hash=$(git -C steam-game-idler rev-parse --short HEAD)
+          pkgver="${appver}.r${rev}.g${hash}"
+          echo "pkgver=$pkgver" >> "$GITHUB_OUTPUT"
+          echo "::notice::pkgver=$pkgver"
+
+      - name: Stage PKGBUILD with pinned pkgver + steady source ref
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /build
+          cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO /build/
+
+          appver="${{ needs.prepare.outputs.version }}"
+          pkgver="${{ steps.pkgver.outputs.pkgver }}"
+          sed -i -E "s/^pkgver=.*/pkgver=${pkgver}/" /build/PKGBUILD
+          sed -i -E "s/^\tpkgver = .*/\tpkgver = ${pkgver}/" /build/.SRCINFO
+
+          # makepkg runs pkgver() and would otherwise read the app version from
+          # the steam-game-idler submodule's tauri.conf.json, which may still be
+          # the previous app version when cutting a parent SGI release. Pin the
+          # generated AUR package to the release version resolved above.
+          sed -i -E "s|^  appver=[$][(]grep -m1 .*|  appver='${appver}'|" /build/PKGBUILD
+          grep -q "^  appver='${appver}'$" /build/PKGBUILD
+
+          # Point the source line at the exact commit being released so the
+          # AUR build is reproducible from this PKGBUILD without depending on
+          # mutable `branch=master`. Keep .SRCINFO in lockstep with PKGBUILD.
+          sha=$(git rev-parse HEAD)
+          source_url="git+https://github.com/${GITHUB_REPOSITORY}.git#commit=${sha}"
+          sed -i -E "s|^source=.*|source=('${source_url}')|" /build/PKGBUILD
+          sed -i -E "s|^\tsource = .*|\tsource = ${source_url}|" /build/.SRCINFO
+
+          useradd -m builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+          chown -R builder /build
+
+      - name: makepkg
+        run: |
+          sudo -u builder bash -c "cd /build && makepkg -d --noconfirm --noprogressbar"
+
+      - name: Verify install layout (no spaces, /usr/bin symlink, libs in /usr/lib)
+        run: |
+          set -euo pipefail
+          pkg=$(find /build -maxdepth 1 -name 'steam-game-idler-git-*.pkg.tar.zst' -print -quit)
+          [[ -n "$pkg" ]] || { echo "::error::no .pkg.tar.zst produced"; exit 1; }
+          pacman -U --noconfirm "$pkg"
+
+          # No path with spaces.
+          if pacman -Ql steam-game-idler-git | awk '{$1=""; print substr($0,2)}' \
+              | grep -E '^/usr/(bin|lib)/Steam Game Idler' ; then
+            echo "::error::package contains spaced /usr paths"
+            exit 1
+          fi
+
+          # /usr/bin entry must be a symlink that resolves to /usr/lib/<app>/.
+          [[ -L /usr/bin/steam-game-idler ]] || { echo "::error::/usr/bin/steam-game-idler is not a symlink"; exit 1; }
+          target=$(readlink -f /usr/bin/steam-game-idler)
+          [[ "$target" == "/usr/lib/steam-game-idler/steam-game-idler" ]] \
+            || { echo "::error::symlink resolves to '$target'"; exit 1; }
+
+          # SteamUtility.Cli runs.
+          /usr/lib/steam-game-idler/libs/SteamUtility.Cli detect || true
+
+          # .desktop must point at the symlink, no quoted WMClass.
+          desktop=/usr/share/applications/steam-game-idler.desktop
+          grep -q '^Exec=/usr/bin/steam-game-idler$' "$desktop"
+          ! grep -qE '^StartupWMClass=".*"' "$desktop"
+
+      - name: Upload AUR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aur-bundle
+          path: |
+            /build/steam-game-idler-git-*.pkg.tar.zst
+            /build/PKGBUILD
+            /build/.SRCINFO
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Source tarball: a reproducible snapshot of the SGI workspace at this tag,
+  # with both submodules vendored. Useful for offline builds and audit.
+  # ---------------------------------------------------------------------------
+  build_source_tarball:
+    name: Source tarball
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Pack source tarball
+        run: |
+          set -euo pipefail
+          version="${{ needs.prepare.outputs.version }}"
+          name="sgi-${version}-source"
+          mkdir -p stage
+
+          # Exclude .git directories — we want a clean source archive, not a
+          # checkout. Submodule contents are kept (they were already pulled).
+          tar --exclude-vcs \
+              --exclude='**/node_modules' \
+              --exclude='**/target' \
+              --exclude='**/.next' \
+              --exclude='**/bin' \
+              --exclude='**/obj' \
+              --exclude='./stage' \
+              --transform "s|^\.|${name}|" \
+              -czf "stage/${name}.tar.gz" .
+
+          ls -lh "stage/${name}.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-tarball
+          path: stage/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Push PKGBUILD/.SRCINFO to the AUR git repo. Same SSH bootstrap as
+  # publish-aur.yml, but the version is already pinned in the staged files.
+  # ---------------------------------------------------------------------------
+  publish_aur:
+    name: Push PKGBUILD to AUR
+    needs: [prepare, build_aur]
+    if: needs.prepare.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: aur-bundle
+          path: aur-staged
+
+      - name: Configure AUR SSH
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$AUR_SSH_PRIVATE_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+
+          expected='SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4'
+          ssh-keyscan -t ed25519 aur.archlinux.org > ~/.ssh/aur_known_hosts
+          actual="$(ssh-keygen -lf ~/.ssh/aur_known_hosts | awk '{ print $2 }')"
+          test "$actual" = "$expected"
+          cat ~/.ssh/aur_known_hosts >> ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<'EOF'
+          Host aur.archlinux.org
+            User aur
+            IdentityFile ~/.ssh/aur
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+          EOF
+
+      - name: Commit + push to AUR
+        env:
+          AUR_PACKAGE: steam-game-idler-git
+        run: |
+          set -euo pipefail
+          work=$(mktemp -d)
+          git clone "ssh://aur@aur.archlinux.org/${AUR_PACKAGE}.git" "$work/$AUR_PACKAGE" 2>/dev/null \
+            || git -C "$work" init -b master "$AUR_PACKAGE"
+
+          cd "$work/$AUR_PACKAGE"
+          git remote get-url origin >/dev/null 2>&1 \
+            || git remote add origin "ssh://aur@aur.archlinux.org/${AUR_PACKAGE}.git"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          cp "$GITHUB_WORKSPACE/aur-staged/PKGBUILD" ./PKGBUILD
+          cp "$GITHUB_WORKSPACE/aur-staged/.SRCINFO" ./.SRCINFO
+
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "AUR already at this version; nothing to push."
+            exit 0
+          fi
+          git commit -m "Update steam-game-idler-git to ${{ needs.build_aur.outputs.pkgver }}"
+          git push origin HEAD:master
+
+  # ---------------------------------------------------------------------------
+  # Final fan-in: download every artifact, attach to a single GitHub release.
+  # ---------------------------------------------------------------------------
+  publish_release:
+    name: Publish GitHub release
+    needs:
+      - prepare
+      - build_linux_bundle
+      - build_windows_bundle
+      - build_aur
+      - build_source_tarball
+    if: needs.prepare.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Stage release files (flatten + rename PKGBUILD/.SRCINFO)
+        run: |
+          set -euo pipefail
+          out=release-files
+          mkdir -p "$out"
+
+          cp artifacts/linux-bundle/* "$out/"
+          cp artifacts/windows-bundle/* "$out/"
+          cp artifacts/source-tarball/* "$out/"
+
+          # AUR bundle: keep .pkg.tar.zst as-is, but rename PKGBUILD/.SRCINFO
+          # so they appear with explicit names on the release page.
+          cp artifacts/aur-bundle/*.pkg.tar.zst "$out/"
+          cp artifacts/aur-bundle/PKGBUILD "$out/steam-game-idler-git.PKGBUILD"
+          cp artifacts/aur-bundle/.SRCINFO "$out/steam-game-idler-git.SRCINFO"
+
+          echo "=== final release files ==="
+          ls -lh "$out"
+          (cd "$out" && sha256sum -- ./* > SHA256SUMS)
+          cat "$out/SHA256SUMS"
+
+      - name: Generate release notes
+        id: notes
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const tag = '${{ needs.prepare.outputs.tag }}';
+            const { data } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+            });
+            const fs = require('fs');
+            const filtered = data.body
+              .split('\n')
+              .filter(line => {
+                const t = line.trim();
+                if (t.startsWith('* chore: update changelog')) return false;
+                if (t.startsWith('* chore(version): bump to')) return false;
+                if (t.startsWith('* chore(i18n)')) return false;
+                if (t.startsWith('* chore(ci)')) return false;
+                if (t.startsWith('* ci:')) return false;
+                if (t.startsWith('* docs:')) return false;
+                return true;
+              })
+              .join('\n');
+            fs.writeFileSync('release-notes.md', filtered);
+
+      - name: Create release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag }}
+          name: Steam Game Idler ${{ needs.prepare.outputs.tag }}
+          body_path: release-notes.md
+          files: release-files/*
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

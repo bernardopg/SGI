@@ -27,6 +27,7 @@ jobs:
     steps:
       - name: Configure pacman mirrors
         run: |
+          # shellcheck disable=SC2016 # $repo and $arch are pacman placeholders, not shell vars
           printf 'Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch\nServer = https://mirror.rackspace.com/archlinux/$repo/os/$arch\n' \
             > /etc/pacman.d/mirrorlist
           sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
@@ -65,7 +66,7 @@ jobs:
 
       - name: Install package
         run: |
-          pkg=$(ls /build/steam-game-idler-git-*.pkg.tar.zst 2>/dev/null | head -1)
+          pkg=$(find /build -maxdepth 1 -name 'steam-game-idler-git-*.pkg.tar.zst' -print -quit)
           if [[ -z "$pkg" ]]; then
             echo "ERROR: no .pkg.tar.zst found"
             ls -la /build/
