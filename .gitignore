@@ -59,3 +59,4 @@ credentials.json
 service_account.json
 
 .obsidian/
+.claude/
