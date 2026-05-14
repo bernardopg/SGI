@@ -1,13 +1,19 @@
-name: AUR package build
+name: AUR package build (verification)
+
+# Verifies that packaging/aur/PKGBUILD still builds and installs cleanly.
+# Intentionally NOT run on every push to master:
+#   - the release pipeline (release.yml -> build_aur) already builds the
+#     PKGBUILD on every tag and on workflow_dispatch
+#   - the CI workflow (ci.yml -> aur-metadata) validates .SRCINFO on every push
+# This workflow runs only when packaging metadata changes in a PR, or when
+# explicitly triggered from the Actions UI.
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master]
+  pull_request:
     paths:
       - 'packaging/aur/**'
-      - 'steam-game-idler/**'
-      - 'steam-utility-multiplataform/**'
+      - '.github/workflows/aur-build.yml'
 
 permissions:
   contents: read
@@ -38,7 +44,6 @@ jobs:
         run: pacman -Syu --noconfirm --needed base-devel git sudo
 
       - name: Install makedepends
-        # `rust` already provides `cargo`; listing both is redundant.
         run: pacman -S --noconfirm --needed rust nodejs pnpm dotnet-sdk
 
       - name: Install Tauri system dependencies

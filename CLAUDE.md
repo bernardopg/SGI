@@ -64,7 +64,7 @@ dotnet run --project tests/SteamUtility.Tests -c Release   # custom runner, not 
 ```bash
 AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh
 ```
-Automated publishing via GitHub Actions requires the `AUR_SSH_PRIVATE_KEY` secret on the SGI repo.
+Automated publishing to AUR is part of `release.yml` (job `publish_aur`) and runs only on tag pushes (`v*.*.*`) or manual `workflow_dispatch` without `dry_run`. Requires the `AUR_SSH_PRIVATE_KEY` secret on the SGI repo.
 
 ## Architecture
 
@@ -112,31 +112,38 @@ Next.js, organized under `src/features/` by domain: `achievement-manager`, `achi
 ### AUR (`packaging/aur/`)
 The PKGBUILD publishes `SteamUtility.Cli` as a self-contained single-file binary into `src-tauri/libs/`, then runs `pnpm tauri build --bundles deb` and extracts the resulting `.deb`. `.SRCINFO` must stay in sync with `PKGBUILD` — the CI validates this with `makepkg --printsrcinfo`.
 
-## CI (`/.github/workflows/ci.yml`)
+## CI / Release workflows (`.github/workflows/`)
 
-Runs on every push to `master` and on pull requests. Two jobs:
+| Workflow | Trigger | Purpose |
+|---|---|---|
+| `ci.yml` | push to `master`, all PRs | `pnpm typecheck` + `cargo check` against current submodule state, and `.SRCINFO` ≡ `makepkg --printsrcinfo` |
+| `aur-build.yml` | PR touching `packaging/aur/**`, manual dispatch | Build the PKGBUILD in an Arch container and install it to catch regressions |
+| `release.yml` | tag `v*.*.*` push, manual dispatch | Full release pipeline — see below |
 
-| Job | What it checks |
-|---|---|
-| `workspace` | `pnpm typecheck` + `cargo check` against the checked-out submodule state |
-| `aur-metadata` | `.SRCINFO` matches what `makepkg --printsrcinfo` would generate |
-
-Pinned action versions (as of last update): `actions/checkout@v6.0.2`, `actions/setup-node@v6.4.0`, `pnpm/action-setup@v6.0.3`.
-
-## Release pipeline (`steam-game-idler/.github/workflows/release.yml`)
-
-Triggered manually via `workflow_dispatch`. Key jobs:
+`release.yml` jobs (in dependency order):
 
 | Job | Runner | Purpose |
 |---|---|---|
-| `build_dotnet_libs` | windows-latest | Builds the Windows `SteamUtility.exe` from `libs/SteamUtility.csproj` (legacy Windows path) |
-| `build_dotnet_linux` | ubuntu-22.04 | Publishes `SteamUtility.Cli` (self-contained, linux-x64) from `steam-utility-multiplataform` |
-| `build_release_bundle` | windows-latest | Builds the Windows Tauri bundle (NSIS installer + portable zip) and creates the GitHub release |
-| `build_release_linux` | ubuntu-22.04 | Builds the Linux Tauri bundle (`.deb` + AppImage) and uploads artifacts to the existing release |
-| `send_discord_notification` | ubuntu-latest | Posts the changelog to Discord after both bundles succeed |
+| `prepare` | ubuntu-latest | Resolve `version` / `tag` / `should_publish` from tag or dispatch input |
+| `ci_gate` | ubuntu-22.04 | Re-run typecheck + cargo check + `.SRCINFO` validation before any artifact work starts |
+| `build_steamutility` | ubuntu-22.04 + windows-latest matrix | Publish `SteamUtility.Cli` (linux-x64) and `SteamUtility.exe` (win-x64) from `steam-utility-multiplataform` |
+| `build_linux_bundle` | ubuntu-22.04 | Tauri bundle: `.deb`, `.rpm`, `.AppImage` |
+| `build_windows_bundle` | windows-latest | Tauri bundle: NSIS installer + portable `.zip` |
+| `build_aur` | archlinux container | Build `.pkg.tar.zst` from the PKGBUILD, pinning `pkgver` and the `source=` ref to this commit; upload PKGBUILD/.SRCINFO/.pkg.tar.zst as artifacts |
+| `build_source_tarball` | ubuntu-latest | Vendored `sgi-<version>-source.tar.gz` (SGI + both submodules, no `.git`/build dirs) |
+| `publish_aur` | ubuntu-latest | **Only runs when `should_publish==true`** (real tag, or dispatch with `dry_run=false`). Pushes PKGBUILD/.SRCINFO to `ssh://aur@aur.archlinux.org/steam-game-idler-git.git` |
+| `publish_release` | ubuntu-latest | Same gate as above. Attaches every artifact + `SHA256SUMS` to a single GitHub release for the tag |
 
-`build_release_linux` depends on `build_release_bundle` completing first so the GitHub release exists before Linux artifacts are uploaded.
+**AUR is published only on a versioned release** — never on a regular push to `master`. The legacy stand-alone `publish-aur.yml` was removed in favour of the gated `release.yml -> publish_aur` job to avoid pushing intermediate snapshots.
 
-The `utility_ref` input (default `"main"`) controls which ref of `steam-utility-multiplataform` is checked out for the Linux CLI build. Passing a tag or SHA here pins the build to a known-good version.
+Pinned action versions: `actions/checkout@v6.0.2`, `actions/setup-node@v6.4.0`, `pnpm/action-setup@v6.0.5`, `actions/setup-dotnet@v5.2.0`, `actions/upload-artifact@v7.0.1`, `actions/download-artifact@v8.0.1`, `actions/github-script@v9`, `softprops/action-gh-release@v3`, `swatinem/rust-cache@v2.9.1`, `dtolnay/rust-toolchain@stable`.
 
-**Known gap:** the Windows release job still uses the legacy `libs/SteamUtility.csproj` (upstream .NET Framework binary), not `steam-utility-multiplataform`. Migration to the cross-platform utility on Windows is pending.
+### How to cut a release
+
+```bash
+# from SGI/ master, after submodule pointers are at their intended commits
+git tag v5.0.6
+git push origin v5.0.6
+```
+
+Or, from the Actions UI: run "Release" workflow_dispatch with `version=5.0.6` and `dry_run=false`. Setting `dry_run=true` builds everything and uploads artifacts but skips the AUR push and the GitHub release.

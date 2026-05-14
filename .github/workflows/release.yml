@@ -291,6 +291,16 @@ jobs:
           # launches without an embedded Steam Web API key.
           sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
             src-tauri/src/lib.rs
+          # pnpm 10+ strictDepBuilds: inject allowBuilds for native deps if the
+          # current submodule pointer is from before that field landed.
+          if ! grep -q '^allowBuilds:' pnpm-workspace.yaml; then
+            {
+              echo 'allowBuilds:'
+              echo "  '@heroui/shared-utils': true"
+              echo '  esbuild: true'
+              echo '  sharp: true'
+            } >> pnpm-workspace.yaml
+          fi
           grep '"version"' src-tauri/tauri.conf.json | head -1
           grep '"createUpdaterArtifacts"' src-tauri/tauri.conf.json
 
@@ -389,6 +399,14 @@ jobs:
             src-tauri/tauri.conf.json
           sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
             src-tauri/src/lib.rs
+          if ! grep -q '^allowBuilds:' pnpm-workspace.yaml; then
+            {
+              echo 'allowBuilds:'
+              echo "  '@heroui/shared-utils': true"
+              echo '  esbuild: true'
+              echo '  sharp: true'
+            } >> pnpm-workspace.yaml
+          fi
 
       - name: Frontend install
         working-directory: steam-game-idler
