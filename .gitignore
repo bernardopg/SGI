@@ -61,3 +61,4 @@ service_account.json
 # Personal / app data
 .obsidian/
 .claude/
+.gitnexus
