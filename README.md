@@ -73,6 +73,17 @@ The script:
 - sources `.env.dev`;
 - starts `pnpm tauri dev` with Webpack.
 
+Runtime packages required by SGI on common Linux distros:
+
+| Distro family | Packages |
+|---|---|
+| Debian / Ubuntu | `libwebkit2gtk-4.1-0`, `libgtk-3-0`, `libssl3`, `libayatana-appindicator3-1` |
+| Arch / Manjaro | `webkit2gtk-4.1`, `gtk3`, `openssl`, `libayatana-appindicator` |
+| Fedora | `webkit2gtk4.1`, `gtk3`, `openssl`, `libappindicator-gtk3` |
+| openSUSE | `webkit2gtk3`, `gtk3`, `libopenssl3`, `libappindicator3-1` |
+
+Build-time packages are documented in `steam-game-idler/docs/content/docs/get-started/linux-dependencies.mdx`.
+
 ## Status
 
 - Tauri backend compiles on Linux.

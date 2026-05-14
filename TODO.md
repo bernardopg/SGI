@@ -52,38 +52,38 @@
   - Steam IPC;
   - orphan `SteamUtility.Cli` processes;
   - `/tmp/steam-game-idler` cleanup.
-- [ ] Document Linux dependencies per distro.
+- [x] Document Linux dependencies per distro. (`steam-game-idler/docs/content/docs/get-started/linux-dependencies.mdx` plus parent README runtime summary)
 - [x] Confirm `.deb`, `.rpm`, and AppImage build paths with `SteamUtility.Cli` bundled. (`build_release_linux` job added to `release.yml`)
 - [ ] Validate an actual `build_release_linux` run on a test release.
 - [ ] Verify Tauri permissions on an installed build, not just `tauri dev`.
 - [ ] Test installation on a clean environment.
 - [ ] Review tray, close-to-tray, and native notification behavior outside dev mode.
-- [ ] Ensure generated `steam_appid.txt` never lands in versioned/watched directories.
+- [x] Ensure generated `steam_appid.txt` never lands in versioned/watched directories. (covered by `idling.rs` regression test and `git ls-files '*steam_appid.txt'`)
 
 ## Bugs to fix in `release.yml`
 
 - [x] `pnpm/action-setup@v3` → `@v4` in `build_release_bundle` and `build_release_linux`.
 - [x] `version: latest` → `10` in pnpm setup for both jobs.
-- [ ] `build_dotnet_linux` always checks out HEAD of `steam-utility-multiplataform` default branch — added `utility_ref` input (defaults to `main`) as a first step; long-term, wire up the pinned submodule SHA automatically.
+- [x] `build_dotnet_linux` always checks out HEAD of `steam-utility-multiplataform` default branch — resolved by the current parent release workflow, which checks out submodules recursively and builds `SteamUtility.Cli` from the pinned submodule SHA in `build_steamutility`.
 
 ## P2 - SteamUtility integration
 
-- [ ] Create an explicit contract between SGI and `SteamUtility.Cli` for commands and JSON.
-- [ ] Separate stdout JSON from native/Steam IPC logs to avoid broken parsing.
-- [ ] Add integration tests for:
+- [x] Create an explicit contract between SGI and `SteamUtility.Cli` for commands and JSON. (`steam-game-idler/docs/STEAM_UTILITY_CONTRACT.md`)
+- [x] Separate stdout JSON from native/Steam IPC logs to avoid broken parsing. (SGI parses utility stdout as JSON; `StdoutJsonContractTests` enforces JSON-only stdout for SGI command paths)
+- [x] Add integration tests for:
   - `idle`;
   - `check_ownership`;
   - `get_achievement_data`;
   - achievement/stats mutations.
-- [ ] Decide versioning strategy between the app and the utility.
+- [x] Decide versioning strategy between the app and the utility. (`docs/VERSIONING.md`)
 
 ## P3 - upstream and maintenance
 
-- [ ] Compare branch/fork with upstream `zevnda/steam-game-idler`.
-- [ ] Split small PRs where it makes sense upstream.
-- [ ] Keep a changelog of Linux decisions.
+- [x] Compare branch/fork with upstream `zevnda/steam-game-idler`. (`docs/UPSTREAM_COMPARISON.md`; compared `origin/main` 358838ff with `upstream/main` e0f3b351 on 2026-05-14)
+- [x] Split small PRs where it makes sense upstream. (`docs/UPSTREAM_PR_PLAN.md`)
+- [x] Keep a changelog of Linux decisions. (`docs/LINUX_DECISIONS.md`)
 - [x] Automate CI in the parent workspace with submodule updates. (parent CI/release automation committed in `b29ec87`; CI run `25126274686` passed)
-- [ ] Periodically re-check whether Turbopack is stable inside the Tauri/WebKitGTK dev WebView after future Next/Tauri/WebKitGTK upgrades.
+- [x] Periodically re-check whether Turbopack is stable inside the Tauri/WebKitGTK dev WebView after future Next/Tauri/WebKitGTK upgrades. (`docs/TURBOPACK_RECHECK.md` defines triggers and procedure)
 
 ## Risks
 
