@@ -142,8 +142,8 @@ Pinned action versions: `actions/checkout@v6.0.2`, `actions/setup-node@v6.4.0`, 
 
 ```bash
 # from SGI/ master, after submodule pointers are at their intended commits
-git tag v5.0.6
-git push origin v5.0.6
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
 
-Or, from the Actions UI: run "Release" workflow_dispatch with `version=5.0.6` and `dry_run=false`. Setting `dry_run=true` builds everything and uploads artifacts but skips the AUR push and the GitHub release.
+Or, from the Actions UI: run "Release" workflow_dispatch with `version=X.Y.Z` and `dry_run=false`. Setting `dry_run=true` builds everything and uploads artifacts but skips the AUR push and the GitHub release.

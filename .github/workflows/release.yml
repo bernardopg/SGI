@@ -32,7 +32,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Semver version (e.g. 5.0.5) — without leading 'v'"
+        description: "Semver version (e.g. 5.0.7) — without leading 'v'"
         required: true
       dry_run:
         description: "Build everything but skip AUR push and GitHub release"
