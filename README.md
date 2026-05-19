@@ -123,21 +123,21 @@ SGI/
 ```
 ┌──────────────────────────────────────────────┐
 │              Next.js Frontend                │
-│  (React, HeroUI, feature-sliced src/)        │
+│    (React, HeroUI, feature-sliced src/)      │
 └───────────────────┬──────────────────────────┘
                     │  tauri::invoke()
                     ▼
-┌──────────────────────────────────────────────┐
-│           Tauri Rust Backend                 │
-│                                              │
-│  steam_utility  ──► binary path resolution   │
-│  idling         ──► spawn / kill idle procs  │
+┌─────────────────────────────────────────────────┐
+│           Tauri Rust Backend                    │
+│                                                 │
+│  steam_utility  ──► binary path resolution      │
+│  idling         ──► spawn / kill idle procs     │
 │  achievement_manager ──► unlock / lock / toggle │
-│  trading_cards  ──► card data + market prices│
-│  crypto         ──► AES key obfuscation      │
-│  automation     ──► scheduled actions        │
-│  process_handler──► child process monitoring │
-└───────────────────┬──────────────────────────┘
+│  trading_cards  ──► card data + market prices   │
+│  crypto         ──► AES key obfuscation         │
+│  automation     ──► scheduled actions           │
+│  process_handler ──► child process monitoring    │
+└───────────────────┬─────────────────────────────┘
                     │  subprocess (stdin/stdout/stderr)
                     ▼
 ┌──────────────────────────────────────────────┐
