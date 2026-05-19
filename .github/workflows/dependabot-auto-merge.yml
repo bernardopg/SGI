@@ -1,12 +1,17 @@
 name: Dependabot auto-merge
 
-# Auto-approves and enables auto-merge for Dependabot PRs that are patch or
-# minor updates. Major updates always require manual review.
+# Enables auto-merge for Dependabot PRs that are patch or minor updates.
+# Major updates get a "needs-review" label and are left for manual merge.
 #
 # Requirements:
-#   - "Allow auto-merge" must be enabled on the repo (Settings → General)
-#   - Branch protection on master must require status checks (CI workflow)
-#   - The GITHUB_TOKEN needs `pull-requests: write` and `contents: write`
+#   - "Allow auto-merge" enabled on repo (Settings → General) ✓ done via API
+#   - Branch protection on master requires CI status checks ✓ done via API
+#   - Settings → Actions → General → "Allow GitHub Actions to create and approve
+#     pull requests" must be ON (cannot be set via REST for personal accounts —
+#     enable manually once at https://github.com/bernardopg/SGI/settings/actions)
+#
+# Note: auto-merge queues the merge; GitHub merges only after all required
+# status checks pass. No approval step needed when branch protection is set.
 
 on:
   pull_request:
@@ -15,6 +20,9 @@ on:
 permissions:
   contents: write
   pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   auto-merge:
@@ -25,18 +33,9 @@ jobs:
     steps:
       - name: Fetch Dependabot metadata
         id: meta
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@v3.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Auto-approve patch and minor updates
-        if: |
-          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
-          steps.meta.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr review --approve "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enable auto-merge for patch and minor updates
         if: |
