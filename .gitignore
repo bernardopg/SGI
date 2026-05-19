@@ -62,3 +62,4 @@ service_account.json
 .obsidian/
 .claude/
 .gitnexus
+raw_workflow_logs/

@@ -40,7 +40,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -59,6 +59,7 @@ jobs:
   prepare:
     name: Resolve version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.resolve.outputs.version }}
       tag: ${{ steps.resolve.outputs.tag }}
@@ -109,16 +110,12 @@ jobs:
           submodules: recursive
 
       - name: Install Tauri system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libssl-dev \
-            libgtk-3-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.3
+        with:
+          packages: >-
+            libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev
+            libjavascriptcoregtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+          version: 1
 
       - uses: actions/setup-node@v6.4.0
         with:
@@ -187,6 +184,8 @@ jobs:
       - uses: actions/setup-dotnet@v5.2.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
+          cache: true
+          cache-dependency-path: steam-utility-multiplataform/src/SteamUtility.Cli/SteamUtility.Cli.csproj
 
       - name: Restore
         working-directory: steam-utility-multiplataform
@@ -223,6 +222,7 @@ jobs:
         with:
           name: steamutility-${{ matrix.runtime }}
           path: steam-utility-multiplataform/artifacts/${{ matrix.output_name }}
+          if-no-files-found: error
           retention-days: 1
 
   # ---------------------------------------------------------------------------
@@ -239,19 +239,13 @@ jobs:
           submodules: recursive
 
       - name: Install Tauri + bundler system deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libwebkit2gtk-4.1-dev \
-            libssl-dev \
-            libgtk-3-dev \
-            libsoup-3.0-dev \
-            libjavascriptcoregtk-4.1-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            squashfs-tools \
-            patchelf \
-            rpm
+        uses: awalsh128/cache-apt-pkgs-action@v1.4.3
+        with:
+          packages: >-
+            libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev
+            libjavascriptcoregtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+            squashfs-tools patchelf rpm
+          version: 1
 
       - uses: actions/setup-node@v6.4.0
         with:
@@ -277,32 +271,9 @@ jobs:
         run: chmod +x steam-game-idler/src-tauri/libs/SteamUtility.Cli
 
       - name: Pin tauri.conf.json version + disable updater + drop API panic
-        working-directory: steam-game-idler
-        run: |
-          set -euo pipefail
-          version="${{ needs.prepare.outputs.version }}"
-          # version
-          sed -i -E 's/"version":[[:space:]]*"[^"]*"/"version": "'"$version"'"/' \
-            src-tauri/tauri.conf.json
-          # updater disabled (we don't have a signing key in this workflow path)
-          sed -i 's/"createUpdaterArtifacts":[[:space:]]*"[^"]*"/"createUpdaterArtifacts": false/' \
-            src-tauri/tauri.conf.json
-          # match the AUR PKGBUILD: replace the production panic so the binary
-          # launches without an embedded Steam Web API key.
-          sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
-            src-tauri/src/lib.rs
-          # pnpm 10+ strictDepBuilds: inject allowBuilds for native deps if the
-          # current submodule pointer is from before that field landed.
-          if ! grep -q '^allowBuilds:' pnpm-workspace.yaml; then
-            {
-              echo 'allowBuilds:'
-              echo "  '@heroui/shared-utils': true"
-              echo '  esbuild: true'
-              echo '  sharp: true'
-            } >> pnpm-workspace.yaml
-          fi
-          grep '"version"' src-tauri/tauri.conf.json | head -1
-          grep '"createUpdaterArtifacts"' src-tauri/tauri.conf.json
+        uses: ./.github/actions/pin-tauri-version
+        with:
+          version: ${{ needs.prepare.outputs.version }}
 
       - name: Frontend install
         working-directory: steam-game-idler
@@ -388,25 +359,9 @@ jobs:
           path: steam-game-idler/src-tauri/libs
 
       - name: Pin version + disable updater + drop API panic
-        working-directory: steam-game-idler
-        shell: bash
-        run: |
-          set -euo pipefail
-          version="${{ needs.prepare.outputs.version }}"
-          sed -i -E 's/"version":[[:space:]]*"[^"]*"/"version": "'"$version"'"/' \
-            src-tauri/tauri.conf.json
-          sed -i 's/"createUpdaterArtifacts":[[:space:]]*"[^"]*"/"createUpdaterArtifacts": false/' \
-            src-tauri/tauri.conf.json
-          sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
-            src-tauri/src/lib.rs
-          if ! grep -q '^allowBuilds:' pnpm-workspace.yaml; then
-            {
-              echo 'allowBuilds:'
-              echo "  '@heroui/shared-utils': true"
-              echo '  esbuild: true'
-              echo '  sharp: true'
-            } >> pnpm-workspace.yaml
-          fi
+        uses: ./.github/actions/pin-tauri-version
+        with:
+          version: ${{ needs.prepare.outputs.version }}
 
       - name: Frontend install
         working-directory: steam-game-idler
@@ -582,6 +537,7 @@ jobs:
     name: Source tarball
     needs: prepare
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6.0.2
         with:
@@ -625,6 +581,7 @@ jobs:
     needs: [prepare, build_aur]
     if: needs.prepare.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/download-artifact@v8.0.1
         with:
@@ -678,10 +635,12 @@ jobs:
           git add PKGBUILD .SRCINFO
           if git diff --cached --quiet; then
             echo "AUR already at this version; nothing to push."
+            rm -f ~/.ssh/aur
             exit 0
           fi
           git commit -m "Update steam-game-idler-git to ${{ needs.build_aur.outputs.pkgver }}"
           git push origin HEAD:master
+          rm -f ~/.ssh/aur
 
   # ---------------------------------------------------------------------------
   # Final fan-in: download every artifact, attach to a single GitHub release.
@@ -697,7 +656,7 @@ jobs:
     if: needs.prepare.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write  # criar/editar GitHub release
     steps:
       - uses: actions/checkout@v6.0.2
 

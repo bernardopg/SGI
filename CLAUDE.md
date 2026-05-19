@@ -136,7 +136,7 @@ The PKGBUILD publishes `SteamUtility.Cli` as a self-contained single-file binary
 
 **AUR is published only on a versioned release** — never on a regular push to `master`. The legacy stand-alone `publish-aur.yml` was removed in favour of the gated `release.yml -> publish_aur` job to avoid pushing intermediate snapshots.
 
-Pinned action versions: `actions/checkout@v6.0.2`, `actions/setup-node@v6.4.0`, `pnpm/action-setup@v6.0.5`, `actions/setup-dotnet@v5.2.0`, `actions/upload-artifact@v7.0.1`, `actions/download-artifact@v8.0.1`, `actions/github-script@v9`, `softprops/action-gh-release@v3`, `swatinem/rust-cache@v2.9.1`, `dtolnay/rust-toolchain@stable`.
+Pinned action versions: `actions/checkout@v6.0.2`, `actions/setup-node@v6.4.0`, `pnpm/action-setup@v6.0.8`, `actions/setup-dotnet@v5.2.0`, `actions/upload-artifact@v7.0.1`, `actions/download-artifact@v8.0.1`, `actions/github-script@v9`, `softprops/action-gh-release@v3`, `swatinem/rust-cache@v2.9.1`, `dtolnay/rust-toolchain@stable`, `awalsh128/cache-apt-pkgs-action@v1.4.3`.
 
 ### How to cut a release
 
