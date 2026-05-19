@@ -5,10 +5,9 @@
 - SGI is the parent workspace for two submodules:
   - `steam-game-idler/` — Tauri/Next.js desktop app.
   - `steam-utility-multiplataform/` — cross-platform .NET Steam utility used by the app.
-- Latest verified release: `v5.0.6` on 2026-05-14.
-  - GitHub Actions release run `25874439239`: success.
-  - GitHub Release: https://github.com/bernardopg/SGI/releases/tag/v5.0.6
-  - AUR commit: `8153de0 Update steam-game-idler-git to 5.0.6.r1721.g6524fa73`.
+- Latest verified release: `v5.0.8` on 2026-05-19 (cut via `git tag v5.0.8 && git push origin v5.0.8`).
+  - Previous verified release: `v5.0.7` on 2026-05-19.
+  - `v5.0.6` on 2026-05-14 (GitHub Actions run `25874439239`; AUR commit `8153de0`).
 - AUR publishing is now release-gated only:
   - tag push matching `v*.*.*`; or
   - manual `release.yml` dispatch with `dry_run=false`.
@@ -44,6 +43,36 @@
 - [x] Keep Turbopack disabled for Linux/dev until there is a future Next/Tauri/WebKitGTK stability reason to revisit it. (`next dev --webpack` remains mandatory for the Tauri dev WebView)
 - [x] Decide that the Linux idler cap stays as a per-platform constant for now. (8 on Linux, 32 on Windows; documented in README/CLAUDE and hard-coded in `idling.rs`)
 - [x] Ensure generated `steam_appid.txt` never lands in versioned/watched directories. (covered by `idling.rs` regression test and `git ls-files '*steam_appid.txt'`)
+
+### Frontend cross-platform UI fixes
+
+- [x] Remove hardcoded "Windows" from `runAtStartup` setting label and description across all 12 affected locales (de-DE, en-US, fr-FR, id-ID, it-IT, mk-MK, pl-PL, pt-BR, ru-RU, tr-TR, uk-UA, zh-CN). Text now uses `{{os}}` interpolation; `useGeneralSettings` detects `platform()` at runtime and injects `"Linux"` or `"Windows"` accordingly. pt-BR title also fixed: `"Iniciar com o Windows"` → `"Iniciar com o Sistema"`.
+- [x] Add Linux platform guard to `UpdateButton.handleUpdate()` and `Menu.handleUpdate()`: check `latest.platforms['linux-x86_64']` before calling `update.downloadAndInstall()`, matching the guard already present in `useCheckForUpdates`. Also fixed `Menu.handleUpdate()` to fetch `latest` before `downloadAndInstall` (previously fetched after install, so `latest.major` check was racing against a completed install).
+- [x] Fix toast width and visual polish: override HeroUI default `w-full` with `!w-[300px] !max-w-[300px]` on `base`, set `!w-auto` on the region container, reduce shadow to `shadow-lg`, reduce font weights and sizes for a more compact notification style, and slim the progress bar to `2px`.
+- [x] Fix `check_for_updates` Rust guard in `src-tauri/src/lib.rs`: replaced fragile string-match on error with typed pattern match on `tauri_plugin_updater::Error::TargetNotFound` under `#[cfg(target_os = "linux")]`; guards "No updates available" `NotificationExt` call behind `#[cfg(not(target_os = "linux"))]` to avoid DBus dependency on Linux.
+- [x] Fix `Menu.handleUpdate()` and `UpdateButton.handleUpdate()` catch blocks: `tauri-plugin-updater` throws a JS exception with `TargetNotFound` message before any platform guard runs, landing in `catch` and calling `showDangerToast` + `logEvent`. Fix: detect `linux-x86_64`/`platforms` in the error string and show `showPrimaryToast(checkUpdate.none)` instead — no error log.
+- [x] Fix duplicate React key collisions in `IdlingGamesList` during card farming: `start_farm_idle` Rust command was pushing `ProcessInfo` for same `app_id` on repeated cycle calls. Fix: added dedup guard at top of per-game loop in `start_farm_idle` (`SPAWNED_PROCESSES.lock()?.iter().any(|p| p.app_id == game.app_id)`).
+- [x] Audit `useTitlebar.windowClose`: confirmed `is_dev` path correctly uses `minimize()` (lines 28-31); confirmed `window.hide()` is correct in production Linux because `should_setup_tray_icon()` always enables tray in non-dev builds. No change needed.
+
+### Linux compatibility audit (2026-05-19)
+
+Full audit of all Linux-relevant paths across frontend TypeScript and Rust backend. Findings:
+
+**Confirmed correct — no action needed:**
+- `useContextMenu`: `platform()` called synchronously (no `await`) at effect setup; returns `'linux'` string causing `skipCustomMenu = true` before `Menu.popup()` is reached. Guard is correct and `Menu.popup()` never fires on Linux.
+- `useCardFarming`: `getMaxFarmIdlers()` uses `platform()` with `await` correctly; returns `LINUX_MAX_FARM_IDLERS = 8` on Linux. Cap is enforced in both `processGamesWithDrops` and `processIndividualGames`.
+- `useCheckForUpdates`: pre-check `fetchLatest()` → `platforms['linux-x86_64']` before `check()` on Linux is correct. No redundant install path.
+- `updateTrayIcon` in `tasks.ts`: uses `TrayIcon.getById('1')` which returns `null` when tray not registered; guarded by `if (trayIcon)`. Errors caught and logged. Silent in dev/no-tray contexts.
+- `update_tray_menu` Rust command: uses `app.tray_by_id("1")` with `if let Some(tray)` guard — no panic when tray absent. `useInit` calling it in dev with no tray just logs a harmless error.
+- `check_start_minimized_setting` Rust: reads JSON settings file directly, no OS-specific behavior. Safe on all platforms.
+- `ExportSettings.tsx / collectSystemInfo()`: correctly handles `linux` / `macos` / Windows with build number detection. No changes needed.
+- `main.rs`: `#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]` applies only on Windows (cfg is compile-time on target). No Linux impact.
+- `command_runner.rs`: `CREATE_NO_WINDOW` flag guarded by `#[cfg(windows)]` throughout. Linux path uses Unix process group logic.
+
+**Gaps identified and tracked as remaining work:**
+- `sendNativeNotification` in `tasks.ts`: has `!isTauri()` and `is_dev` guards but no `platform()` guard. On Linux, DBus/libnotify must be available; function silently skips if permission not granted (catch block calls `showDangerToast` which is excessive for a notification failure). See P2 item below.
+- `tray.*` i18n keys (`tray.show`, `tray.update`, `tray.quit`): only present in `en-US`, `fr-FR`, `it-IT`, `ru-RU` out of 24 locales. Other 20 locales including `pt-BR`, `de-DE`, `zh-CN`, `es-ES` fall back to `en-US` values via i18next fallback. Tray menu shows English text in most locales. See P2 item below.
+- `pt-BR` locale: missing `startMinimized.description` and `closeToTray.description` entries (both present in `en-US`). Falls back silently to English. See P2 item below.
 
 ### Validation completed so far
 
@@ -124,6 +153,17 @@
 - [ ] Launch and exercise `steam-game-idler_5.0.6_x64-portable.zip` on a real Windows machine.
 - [ ] Confirm the installed/portable Windows app finds bundled `SteamUtility.exe` and can run discovery commands.
 - [ ] Run at least one real Steam-native command path through the Windows app with Steam running.
+
+### P2 - i18n completeness
+
+- [x] Add `tray.show`, `tray.update`, `tray.quit` keys to all 24 locales. Translation.json files use flat dotted keys; all locales were missing these — added native-language translations to every locale.
+- [x] Add `settings.general.startMinimized.description` and `settings.general.closeToTray.description` to 14 locales that were missing them (ar-SA, cs-CZ, es-ES, et-EE, fi-FI, hi-IN, ja-JP, ko-KR, nl-NL, pt-BR, pt-PT, ro-RO, zh-CN, zh-TW). All 24 locales now have full coverage.
+- [x] Audit remaining locales for `startMinimized.description` / `closeToTray.description` coverage — 14 locales missing (not just pt-BR); all fixed above.
+
+### P2 - Notification hardening (Linux)
+
+- [x] Refactor `sendNativeNotification` in `src/shared/utils/tasks.ts`: replaced `showDangerToast` in catch block with `logEvent`-only — a failed OS notification is not a user-facing error.
+- [ ] Verify `sendNativeNotification` call in `handleCheckForFreeGames.ts` works correctly on Linux in an installed build (DBus present). Confirm the "Free Games Available!" notification fires and does not produce spurious toast errors.
 
 ### P2 - Packaging hardening
 
