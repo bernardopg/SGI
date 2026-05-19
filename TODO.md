@@ -5,7 +5,7 @@
 - SGI is the parent workspace for two submodules:
   - `steam-game-idler/` — Tauri/Next.js desktop app.
   - `steam-utility-multiplataform/` — cross-platform .NET Steam utility used by the app.
-- Latest verified release: `v5.0.8` on 2026-05-19 (cut via `git tag v5.0.8 && git push origin v5.0.8`).
+- Latest verified release: `v5.0.8` on 2026-05-19 (cut via `git tag v5.0.8 && git push origin v5.0.8`; GitHub Actions run `26074511298`; Windows bundle required re-run after infra flake on rust-cache restore).
   - Previous verified release: `v5.0.7` on 2026-05-19.
   - `v5.0.6` on 2026-05-14 (GitHub Actions run `25874439239`; AUR commit `8153de0`).
 - AUR publishing is now release-gated only:
