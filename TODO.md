@@ -5,14 +5,14 @@
 - SGI is the parent workspace for two submodules:
   - `steam-game-idler/` — Tauri/Next.js desktop app.
   - `steam-utility-multiplataform/` — cross-platform .NET Steam utility used by the app.
-- Latest verified release: `v5.0.8` on 2026-05-19 (cut via `git tag v5.0.8 && git push origin v5.0.8`; GitHub Actions run `26074511298`; Windows bundle required re-run after infra flake on rust-cache restore).
-  - Previous verified release: `v5.0.7` on 2026-05-19.
-  - `v5.0.6` on 2026-05-14 (GitHub Actions run `25874439239`; AUR commit `8153de0`).
+- Latest release: `v5.0.15` on 2026-05-19 (submodule `steam-game-idler` bumped to `5.0.15`; parent commit `155e54d`).
+  - Prior tags in sequence: `v5.0.9`, `v5.0.8`, `v5.0.7` (all 2026-05-19), `v5.0.6` (2026-05-14, GitHub Actions run `25874439239`, AUR commit `8153de0`), `v5.0.5`.
 - AUR publishing is now release-gated only:
   - tag push matching `v*.*.*`; or
   - manual `release.yml` dispatch with `dry_run=false`.
   - Regular pushes to `master` no longer publish to AUR.
 - Remaining high-value work is mostly live runtime validation on real systems, not build-pipeline plumbing.
+- Last local validation: 2026-06-07 — confirmed the Linux native-notification path (free games) fires over DBus on a release build; surfaced a separate "release window never renders locally" question now tracked under P1.
 
 ## Done
 
@@ -102,7 +102,7 @@ Full audit of all Linux-relevant paths across frontend TypeScript and Rust backe
   - dry-run dispatch builds artifacts without publishing AUR/GitHub release;
   - AUR `source=` is pinned to the exact parent commit SHA, not mutable `master`;
   - AUR `pkgver` is pinned to the release version plus submodule revision.
-- [x] Fix pnpm setup drift in release jobs. (current workflows use `pnpm/action-setup@v6.0.5` and `PNPM_VERSION=10`)
+- [x] Fix pnpm setup drift in release jobs. (current workflows use `pnpm/action-setup@v6.0.8` and `PNPM_VERSION=10`)
 - [x] Defensively inject `allowBuilds` for pnpm strict build dependencies in AUR/release builds when older submodule pointers lack it. (fixes `ERR_PNPM_IGNORED_BUILDS` for `@heroui/shared-utils`, `esbuild`, and `sharp`)
 - [x] Publish `v5.0.6` through the full release pipeline and confirm:
   - CI gate success;
@@ -139,7 +139,8 @@ Full audit of all Linux-relevant paths across frontend TypeScript and Rust backe
   - Steam IPC;
   - orphan `SteamUtility.Cli` processes;
   - `/tmp/steam-game-idler` cleanup.
-- [ ] Verify Tauri permissions on an installed build, not just `tauri dev`.
+- [ ] Verify Tauri permissions on an installed build, not just `tauri dev`. (partial: notification capability confirmed working on a local release binary on 2026-06-07 — see P2 notification item; still need full installed-artifact permission review)
+- [ ] Investigate release WebKitGTK render: a local `cargo build --release` binary launched but never showed a window — the frontend never emitted the `ready` event that `setup_window` (`lib.rs`) waits on to unhide the window. Reproduce on a published artifact and determine whether it is a local-build/env quirk or a real release-render regression (asset load, CSP, or a boot-time `invoke` failure).
 - [ ] Manually install and launch the published Linux artifacts on clean desktop environments:
   - `.deb` on Debian/Ubuntu-like system;
   - `.rpm` on Fedora/openSUSE-like system;
@@ -149,8 +150,8 @@ Full audit of all Linux-relevant paths across frontend TypeScript and Rust backe
 
 ### P1 - Live Windows release validation
 
-- [ ] Install and launch `steam-game-idler_5.0.6_x64-setup.exe` on a real Windows machine.
-- [ ] Launch and exercise `steam-game-idler_5.0.6_x64-portable.zip` on a real Windows machine.
+- [ ] Install and launch the `v5.0.15` NSIS setup `.exe` on a real Windows machine.
+- [ ] Launch and exercise the `v5.0.15` portable `.zip` on a real Windows machine.
 - [ ] Confirm the installed/portable Windows app finds bundled `SteamUtility.exe` and can run discovery commands.
 - [ ] Run at least one real Steam-native command path through the Windows app with Steam running.
 
@@ -163,7 +164,7 @@ Full audit of all Linux-relevant paths across frontend TypeScript and Rust backe
 ### P2 - Notification hardening (Linux)
 
 - [x] Refactor `sendNativeNotification` in `src/shared/utils/tasks.ts`: replaced `showDangerToast` in catch block with `logEvent`-only — a failed OS notification is not a user-facing error.
-- [ ] Verify `sendNativeNotification` call in `handleCheckForFreeGames.ts` works correctly on Linux in an installed build (DBus present). Confirm the "Free Games Available!" notification fires and does not produce spurious toast errors.
+- [x] Verify `sendNativeNotification` call in `handleCheckForFreeGames.ts` works correctly on Linux in a release build (DBus present). (2026-06-07) Verified on a `cargo build --release` binary (`debug_assertions` off → `is_dev=false` → notification path active). A temporary opt-in boot hook replicated the exact `tauri-plugin-notification` builder call on Linux; `dbus-monitor` captured the `org.freedesktop.Notifications.Notify` call with title `"Free Games Available!"` and the 🎁 body, `show()` returned `Ok`, and no `showDangerToast` was emitted (success path has no toast; `showDangerToast` only lives in the caller `catch`). Hook reverted, `git diff` clean. Note: real free-games data needs no Steam API key — `get_free_games` (`game_data.rs`) scrapes the Steam store HTML.
 
 ### P2 - Packaging hardening
 
