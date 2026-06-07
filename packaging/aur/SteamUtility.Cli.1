@@ -1,0 +1,111 @@
+.\" Generated for SteamUtility.Cli
+.TH STEAMUTILITY.CLI 1 "June 2026" "SteamUtility.Cli 5.0.15" "User Commands"
+.SH NAME
+SteamUtility.Cli \- Cross-platform Steam utility CLI
+.SH SYNOPSIS
+.B SteamUtility.Cli
+\fICOMMAND\fR [\fIOPTION\fR]...
+.SH DESCRIPTION
+SteamUtility.Cli is a cross-platform command-line utility for Steam operations.
+It is used internally by Steam Game Idler but can also be used standalone.
+.PP
+All commands that require a live Steam session are marked with \fB[LIVE]\fR.
+Commands that work without Steam running are marked with \fB[OFFLINE]\fR.
+.SH COMMANDS
+Discovery (Offline):
+.TP
+.B detect
+Detect Steam installation path.
+.TP
+.B libraries
+List all Steam library folders.
+.TP
+.B apps
+List all installed apps with metadata.
+.TP
+.B compatdata
+Show compatibility data for Proton/Steam Play.
+.TP
+.B compat-tools
+List available compatibility tools (Proton versions).
+.TP
+.B compat-mapping
+Show app-to-compat-tool mapping.
+.TP
+.B compat-report
+Generate compatibility report for all apps.
+.TP
+.B state-report
+Generate Steam client state report.
+.PP
+Steam-Native (Live - requires running Steam session):
+.TP
+.B check_ownership \fI<APPID>\fR
+Check if current user owns a specific app.
+.TP
+.B idle \fI<APPID>\fR [\fI--hours N\fR]
+Idle a game for specified hours.
+.TP
+.B get_achievement_data \fI<APPID>\fR [\fI--cache-dir PATH\fR]
+Get achievement data for a game.
+.TP
+.B unlock_achievement \fI<APPID> <ACHIEVEMENT_ID>\fR
+Unlock a specific achievement.
+.TP
+.B lock_achievement \fI<APPID> <ACHIEVEMENT_ID>\fR
+Lock a specific achievement.
+.TP
+.B toggle_achievement \fI<APPID> <ACHIEVEMENT_ID>\fR
+Toggle an achievement.
+.TP
+.B update_stats \fI<APPID> <STAT_NAME> <VALUE>\fR
+Update a statistic value.
+.TP
+.B reset_all_stats \fI<APPID>\fR
+Reset all statistics for a game.
+.SH OPTIONS
+.TP
+\fB\-\-json\fR
+Output in JSON format (for machine parsing).
+.TP
+\fB\-\-help\fR
+Show help for a specific command.
+.TP
+\fB\-\-version\fR
+Show version information.
+.SH FILES
+.TP
+\fI~/.steam/steam/config/loginusers.vdf\fR
+Steam user login data (read by detection commands).
+.TP
+\fI~/.steam/steam/steamapps/\fR
+Steam library folders and app manifests.
+.SH ENVIRONMENT VARIABLES
+.TP
+\fBSTEAMUTIL_STEAM_PATH\fR
+Override auto-detected Steam installation path.
+.TP
+\fBSTEAMUTIL_COMPAT_TOOL\fR
+Force specific compatibility tool (Proton version).
+.SH EXAMPLES
+.TP
+Detect Steam path:
+.B SteamUtility.Cli detect
+.TP
+List all owned games:
+.B SteamUtility.Cli apps
+.TP
+Idle game for 2 hours:
+.B SteamUtility.Cli idle 730 --hours 2
+.TP
+Get achievement data for CS2:
+.B SteamUtility.Cli get_achievement_data 730 --json
+.SH SEE ALSO
+.BR steam-game-idler (1)
+.PP
+Full documentation: https://steamgameidler.com/docs
+.SH AUTHOR
+Written by zevnda and contributors.
+.SH COPYRIGHT
+Copyright © 2024-2026 zevnda.
+Licensed under GPL-3.0-only.

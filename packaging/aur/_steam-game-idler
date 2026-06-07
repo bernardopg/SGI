@@ -1,0 +1,14 @@
+#compdef steam-game-idler
+
+_steam_game_idler() {
+    local -a options
+    options=(
+        '--help[Show help]'
+        '--version[Show version]'
+        '--portable[Run in portable mode]'
+        '--clear-cache[Clear all cache files]'
+        '--reset-settings[Reset all settings to defaults]'
+    )
+    _arguments -C -s "${options[@]}"
+}
+_steam_game_idler "$@"

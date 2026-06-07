@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.zevnda.steam-game-idler</id>
+  <name>Steam Game Idler</name>
+  <summary>Idle Steam games and farm trading cards</summary>
+  <description>
+    <p>Steam Game Idler is a tool to idle Steam games for playtime, farm trading cards, and unlock achievements automatically.</p>
+    <p>Features:</p>
+    <ul>
+      <li>Idle any game in your Steam library</li>
+      <li>Farm trading cards automatically</li>
+      <li>Unlock achievements and statistics</li>
+      <li>Auto-redeem free games</li>
+      <li>Discord Rich Presence integration</li>
+      <li>System tray support</li>
+      <li>Start minimized / at login</li>
+    </ul>
+  </description>
+  <project_license>GPL-3.0-only</project_license>
+  <url type="homepage">https://github.com/zevnda/steam-game-idler</url>
+  <url type="bugtracker">https://github.com/zevnda/steam-game-idler/issues</url>
+  <url type="help">https://steamgameidler.com/docs</url>
+  <url type="donation">https://github.com/sponsors/zevnda</url>
+  <categories>
+    <category>Game</category>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>Steam</keyword>
+    <keyword>idle</keyword>
+    <keyword>trading cards</keyword>
+    <keyword>achievements</keyword>
+    <keyword>farming</keyword>
+    <keyword>automation</keyword>
+  </keywords>
+  <provides>
+    <binary>steam-game-idler</binary>
+  </provides>
+  <mimetypes>
+    <mimetype>application/x-steam-app-cache-file</mimetype>
+  </mimetypes>
+  <releases>
+    <release version="5.0.15" date="2026-06-07">
+      <description>
+        <p>Linux distribution improvements:</p>
+        <ul>
+          <li>Secure directory permissions (0o700) for user data</li>
+          <li>Clear package-manager update messaging</li>
+          <li>MIME type registration for steam:// protocol</li>
+          <li>AppStream metadata for software centers</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">none</content_attribute>
+    <content_attribute id="violence-fantasy">none</content_attribute>
+    <content_attribute id="violence-realistic">none</content_attribute>
+    <content_attribute id="violence-bloodshed">none</content_attribute>
+    <content_attribute id="sexual-content">none</content_attribute>
+    <content_attribute id="sexual-nudity">none</content_attribute>
+    <content_attribute id="profanity">none</content_attribute>
+    <content_attribute id="controlled-substances">none</content_attribute>
+  </content_rating>
+</component>

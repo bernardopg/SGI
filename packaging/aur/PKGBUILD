@@ -17,6 +17,13 @@ depends=(
   'openssl'
   'webkit2gtk-4.1'
 )
+optdepends=(
+  'webkit2gtk-4.2: newer WebKitGTK support (Wayland improvements)'
+  'xdg-desktop-portal: file picker/screenshot portal support (Flatpak/sandbox)'
+  'libappindicator-gtk3: tray icon on non-Ubuntu desktops (KDE, GNOME, etc.)'
+  'gstreamer: hardware video decode (VA-API/VDPAU)'
+  'libnotify: desktop notifications'
+)
 makedepends=(
   'dotnet-sdk'
   'git'
@@ -92,7 +99,13 @@ build() {
   export TAURI_CI=1
   # fat LTO requires 10+ GB RAM; thin LTO is the standard choice for packaged builds
   export CARGO_PROFILE_RELEASE_LTO=thin
-  pnpm tauri build --bundles deb
+  pnpm tauri build --bundles deb,appimage
+}
+
+check() {
+  cd "$srcdir/SGI/steam-game-idler"
+  # Basic smoke test: ensure binary exists and is executable
+  [[ -x src-tauri/target/release/steam-game-idler ]] || return 1
 }
 
 package() {
@@ -170,6 +183,7 @@ package() {
   # on most desktops and prevent the launcher from grouping windows correctly.
   # The runtime WM_CLASS is the productName, so we keep "Steam Game Idler" as
   # the StartupWMClass value (without quotes).
+  # Add MimeType for steam:// protocol and Steam app cache files.
   local desktop_old="$pkgdir/usr/share/applications/$branded.desktop"
   local desktop_new="$pkgdir/usr/share/applications/$lower.desktop"
   if [[ -f "$desktop_old" ]]; then
@@ -178,8 +192,48 @@ package() {
       -e "s|^Icon=.*|Icon=$lower|" \
       -e "s|^Exec=.*|Exec=/usr/bin/$lower|" \
       -e "s|^StartupWMClass=.*|StartupWMClass=$branded|" \
+      -e "/^MimeType=/d" \
+      -e "/^Categories=/a MimeType=application/x-steam-app-cache-file;" \
       "$desktop_new"
   fi
+
+  # Update desktop database so the new MimeType entry is recognized
+  update-desktop-database -q "$pkgdir/usr/share/applications" 2>/dev/null || true
+
+  # Install AppStream metainfo.xml for software centers (GNOME Software, KDE Discover)
+  install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.metainfo.xml" \
+    "$pkgdir/usr/share/metainfo/com.zevnda.steam-game-idler.metainfo.xml"
+
+  # Install AppImage for portable use
+  local appimage
+  appimage=$(find src-tauri/target/release/bundle/appimage -type f -name '*.AppImage' | head -n1)
+  if [[ -n "$appimage" ]]; then
+    install -Dm755 "$appimage" "$pkgdir/usr/bin/$lower.AppImage"
+  fi
+
+  # Install systemd user service for "start on boot" (not just login)
+  install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.service" \
+    "$pkgdir/usr/lib/systemd/user/steam-game-idler.service"
+
+  # Install shell completions
+  install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.bash" \
+    "$pkgdir/usr/share/bash-completion/completions/steam-game-idler"
+  install -Dm644 "$srcdir/SGI/packaging/aur/_steam-game-idler" \
+    "$pkgdir/usr/share/zsh/site-functions/_steam-game-idler"
+  install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.fish" \
+    "$pkgdir/usr/share/fish/vendor_completions.d/steam-game-idler.fish"
+
+  # Install man pages
+  install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.1" \
+    "$pkgdir/usr/share/man/man1/steam-game-idler.1"
+  install -Dm644 "$srcdir/SGI/packaging/aur/SteamUtility.Cli.1" \
+    "$pkgdir/usr/share/man/man1/SteamUtility.Cli.1"
+
+  # Install symbolic icons for dark/light theme support
+  install -Dm644 "$srcdir/SGI/packaging/aur/icons/scalable/steam-game-idler-symbolic.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/steam-game-idler-symbolic.svg"
+  install -Dm644 "$srcdir/SGI/packaging/aur/icons/scalable/steam-game-idler-symbolic-dark.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/steam-game-idler-symbolic-dark.svg"
 
   # Tauri ships /usr/lib/<app>/ with mode d--x--x--x on some build hosts (a known
   # tauri-bundler quirk that breaks `ls` for non-root users). Force directories to

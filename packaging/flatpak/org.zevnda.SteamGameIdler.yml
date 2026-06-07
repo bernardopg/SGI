@@ -1,0 +1,66 @@
+app-id: org.zevnda.SteamGameIdler
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: steam-game-idler
+finish-args:
+  # X11 + Wayland
+  - --socket=fallback-x11
+  - --socket=wayland
+  # GPU access for WebKitGTK
+  - --device=dri
+  # Network access for Steam API
+  - --share=network
+  # Access to Steam installation
+  - --filesystem=~/.steam:ro
+  - --filesystem=~/.local/share/Steam:ro
+  # User data
+  - --filesystem=~/.local/share/steam-game-idler
+  - --filesystem=~/.cache/steam-game-idler
+  # DBus for notifications, portal APIs
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.portal.FileChooser
+  - --talk-name=org.freedesktop.portal.Background
+  # System tray
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.ayatana.StatusNotifierWatcher
+  # Discord Rich Presence
+  - --talk-name=com.discordapp.Discord
+  # D-Bus activation
+  - --own-name=org.zevnda.steam-game-idler
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /man
+  - /share/doc
+  - /share/gtk-doc
+  - /share/man
+  - '*.la'
+  - '*.a'
+
+modules:
+  - name: steam-utility-cli
+    buildsystem: simple
+    build-commands:
+      - dotnet publish src/SteamUtility.Cli/SteamUtility.Cli.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o /app/libs
+    sources:
+      - type: git
+        url: https://github.com/zevnda/steam-utility-multiplataform
+        branch: main
+
+  - name: steam-game-idler
+    buildsystem: simple
+    build-commands:
+      - echo "Flatpak manifest is a draft and requires SDK extensions for node/pnpm and dotnet"
+      - exit 1
+    sources:
+      - type: git
+        url: https://github.com/zevnda/steam-game-idler
+        branch: main
+    build-options:
+      env:
+        RUSTFLAGS: "-C target-cpu=x86-64-v2"
+        CARGO_PROFILE_RELEASE_LTO: "thin"
+        CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "1"

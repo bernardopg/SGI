@@ -1,0 +1,3 @@
+Placeholder for steam-game-idler.png (256x256)
+This should be replaced with the actual PNG icon from the Tauri build.
+The Tauri build already generates these icons in src-tauri/target/release/bundle/

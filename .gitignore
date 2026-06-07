@@ -63,3 +63,10 @@ service_account.json
 .claude/
 .gitnexus
 raw_workflow_logs/
+
+# Build artifacts
+bin/
+obj/
+
+# graphify
+graphify-out/
