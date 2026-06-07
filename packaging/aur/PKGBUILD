@@ -34,7 +34,7 @@ makedepends=(
 provides=('steam-game-idler')
 conflicts=('steam-game-idler')
 options=('!lto' '!strip' '!debug')
-source=('git+https://github.com/bernardopg/SGI.git#branch=master')
+source=("git+https://github.com/bernardopg/SGI.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 
 pkgver() {
