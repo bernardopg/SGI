@@ -1,0 +1,14 @@
+# Code owners for SGI — requested as reviewers automatically on PRs that
+# touch matching paths. Replaces the deprecated `reviewers:` key in
+# dependabot.yml (GitHub removed reviewers support for Dependabot in 2025).
+
+# Default owner for everything in the repo
+*                                   @bernardopg
+
+# CI / release / packaging
+/.github/                           @bernardopg
+/packaging/                         @bernardopg
+
+# Submodules (pointer bumps)
+/steam-game-idler                   @bernardopg
+/steam-utility-multiplataform       @bernardopg

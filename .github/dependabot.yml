@@ -14,8 +14,6 @@ updates:
     open-pull-requests-limit: 10
     assignees:
       - "bernardopg"
-    reviewers:
-      - "bernardopg"
     labels:
       - "dependencies"
       - "github-actions"
@@ -40,8 +38,6 @@ updates:
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 10
     assignees:
-      - "bernardopg"
-    reviewers:
       - "bernardopg"
     labels:
       - "dependencies"
@@ -110,8 +106,6 @@ updates:
     open-pull-requests-limit: 10
     assignees:
       - "bernardopg"
-    reviewers:
-      - "bernardopg"
     labels:
       - "dependencies"
       - "rust"
@@ -167,8 +161,6 @@ updates:
       timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 10
     assignees:
-      - "bernardopg"
-    reviewers:
       - "bernardopg"
     labels:
       - "dependencies"
