@@ -48,8 +48,11 @@ jobs:
 
       - name: Install Tauri system dependencies
         run: |
+          # makepkg runs with -d (skip dep checks), so PKGBUILD makedepends are
+          # not auto-installed. xdg-utils provides xdg-open, needed by Tauri's
+          # AppImage bundler at bundle time.
           pacman -S --noconfirm --needed \
-            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
 
       - name: Checkout repository
         uses: actions/checkout@v6.0.3
