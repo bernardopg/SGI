@@ -30,6 +30,7 @@ makedepends=(
   'nodejs'
   'pnpm'
   'rust'
+  'xdg-utils'
 )
 provides=('steam-game-idler')
 conflicts=('steam-game-idler')

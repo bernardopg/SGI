@@ -10,6 +10,7 @@ pkgbase = steam-game-idler-git
 	makedepends = nodejs
 	makedepends = pnpm
 	makedepends = rust
+	makedepends = xdg-utils
 	depends = gtk3
 	depends = libayatana-appindicator
 	depends = openssl
