@@ -14,12 +14,17 @@ pkgbase = steam-game-idler-git
 	depends = libayatana-appindicator
 	depends = openssl
 	depends = webkit2gtk-4.1
+	optdepends = webkit2gtk-4.2: newer WebKitGTK support (Wayland improvements)
+	optdepends = xdg-desktop-portal: file picker/screenshot portal support (Flatpak/sandbox)
+	optdepends = libappindicator-gtk3: tray icon on non-Ubuntu desktops (KDE, GNOME, etc.)
+	optdepends = gstreamer: hardware video decode (VA-API/VDPAU)
+	optdepends = libnotify: desktop notifications
 	provides = steam-game-idler
 	conflicts = steam-game-idler
 	options = !lto
 	options = !strip
 	options = !debug
-	source = git+https://github.com/bernardopg/SGI.git#branch=master
+	source = git+https://github.com/bernardopg/SGI.git#tag=v0.0.0.r0.0000000
 	sha256sums = SKIP
 
 pkgname = steam-game-idler-git
