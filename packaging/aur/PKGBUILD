@@ -100,6 +100,13 @@ build() {
   export TAURI_CI=1
   # fat LTO requires 10+ GB RAM; thin LTO is the standard choice for packaged builds
   export CARGO_PROFILE_RELEASE_LTO=thin
+  # The AppImage tooling (linuxdeploy, appimagetool) ships as AppImages that
+  # need FUSE to self-mount. Docker/CI and many sandboxes have no FUSE, so tell
+  # them to extract-and-run instead of mounting.
+  export APPIMAGE_EXTRACT_AND_RUN=1
+  # The strip bundled inside linuxdeploy is too old for the .relr.dyn section in
+  # modern Arch libraries; disable stripping so the AppImage step doesn't abort.
+  export NO_STRIP=1
   pnpm tauri build --bundles deb,appimage
 }
 
