@@ -1,6 +1,6 @@
 [Unit]
 Description=Steam Game Idler
-Documentation=https://github.com/zevnda/steam-game-idler
+Documentation=https://github.com/bernardopg/steam-game-idler
 After=graphical-session.target network-online.target
 Wants=network-online.target
 
@@ -14,7 +14,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/com.zevnda.steam-game-idler %h/.steam
+ReadWritePaths=%h/.local/share/com.github.bernardopg.SteamGameIdler %h/.steam
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes

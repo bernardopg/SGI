@@ -286,6 +286,9 @@ jobs:
           TAURI_CI: "1"
           # Thin LTO is the released-build standard; fat LTO needs >10 GB RAM.
           CARGO_PROFILE_RELEASE_LTO: thin
+          # Signs the updater bundles so latest.json carries a valid signature.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri build --bundles deb,rpm,appimage
 
       - name: Stage release artifacts with friendly names
@@ -373,6 +376,9 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
           TAURI_CI: "1"
           CARGO_PROFILE_RELEASE_LTO: thin
+          # Signs the updater bundles so latest.json carries a valid signature.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: pnpm tauri build --bundles nsis
 
       - name: Stage NSIS installer + portable zip

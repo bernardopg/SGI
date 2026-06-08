@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.zevnda.steam-game-idler</id>
+  <id>com.github.bernardopg.SteamGameIdler</id>
   <name>Steam Game Idler</name>
   <summary>Idle Steam games and farm trading cards</summary>
   <description>
@@ -17,10 +17,10 @@
     </ul>
   </description>
   <project_license>GPL-3.0-only</project_license>
-  <url type="homepage">https://github.com/zevnda/steam-game-idler</url>
-  <url type="bugtracker">https://github.com/zevnda/steam-game-idler/issues</url>
+  <url type="homepage">https://github.com/bernardopg/steam-game-idler</url>
+  <url type="bugtracker">https://github.com/bernardopg/steam-game-idler/issues</url>
   <url type="help">https://steamgameidler.com/docs</url>
-  <url type="donation">https://github.com/sponsors/zevnda</url>
+  <url type="donation">https://github.com/sponsors/bernardopg</url>
   <categories>
     <category>Game</category>
     <category>Utility</category>

@@ -210,7 +210,7 @@ package() {
 
   # Install AppStream metainfo.xml for software centers (GNOME Software, KDE Discover)
   install -Dm644 "$srcdir/SGI/packaging/aur/steam-game-idler.metainfo.xml" \
-    "$pkgdir/usr/share/metainfo/com.zevnda.steam-game-idler.metainfo.xml"
+    "$pkgdir/usr/share/metainfo/com.github.bernardopg.SteamGameIdler.metainfo.xml"
 
   # Install AppImage for portable use
   local appimage
