@@ -88,6 +88,10 @@ jobs:
             exit 1
           fi
           echo "Package: $(ls -lh "$pkg")"
+          if bsdtar -tf "$pkg" | grep -qx 'usr/share/applications/mimeinfo.cache'; then
+            echo "ERROR: package owns generated mimeinfo.cache"
+            exit 1
+          fi
           pacman -U --noconfirm "$pkg"
 
       - name: Verify installation

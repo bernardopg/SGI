@@ -502,6 +502,10 @@ jobs:
           set -euo pipefail
           pkg=$(find /build -maxdepth 1 -name 'steam-game-idler-git-*.pkg.tar.zst' -print -quit)
           [[ -n "$pkg" ]] || { echo "::error::no .pkg.tar.zst produced"; exit 1; }
+          if bsdtar -tf "$pkg" | grep -qx 'usr/share/applications/mimeinfo.cache'; then
+            echo "::error::package owns generated mimeinfo.cache"
+            exit 1
+          fi
           pacman -U --noconfirm "$pkg"
 
           # No path with spaces.
