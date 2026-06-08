@@ -8,12 +8,12 @@ _steam_game_idler() {
 
     case "${prev}" in
         steam-game-idler)
-            COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+            mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
             return 0
-            ;;
+        ;;
     esac
 
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    mapfile -t COMPREPLY < <(compgen -W "${opts}" -- "${cur}")
     return 0
 }
 complete -F _steam_game_idler steam-game-idler

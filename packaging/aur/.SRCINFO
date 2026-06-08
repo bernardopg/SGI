@@ -25,7 +25,7 @@ pkgbase = steam-game-idler-git
 	options = !lto
 	options = !strip
 	options = !debug
-	source = git+https://github.com/bernardopg/SGI.git#tag=v0.0.0.r0.0000000
+	source = git+https://github.com/bernardopg/SGI.git#branch=master
 	sha256sums = SKIP
 
 pkgname = steam-game-idler-git

@@ -10,7 +10,7 @@ EOF
 # Disable download timeout for slow connections and enable parallel downloads
 sed -i 's/^#ParallelDownloads.*/ParallelDownloads = 5/' /etc/pacman.conf
 grep -q 'DisableDownloadTimeout' /etc/pacman.conf \
-  || echo 'DisableDownloadTimeout' >> /etc/pacman.conf
+|| echo 'DisableDownloadTimeout' >> /etc/pacman.conf
 
 echo "[1/6] System update + base-devel"
 pacman -Syu --noconfirm --needed
@@ -21,7 +21,7 @@ pacman -S --noconfirm --needed cargo rust nodejs pnpm dotnet-sdk
 
 echo "[3/6] Install Tauri system deps (webkit2gtk-4.1 is ~35 MB, patience...)"
 pacman -S --noconfirm --needed \
-  webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
+webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg
 
 echo "[4/6] Create builder user"
 useradd -m builder 2>/dev/null || true
@@ -40,11 +40,11 @@ sudo -u builder bash -c "
 
 echo ""
 echo "=== BUILD RESULT ==="
-pkg=$(ls /build/steam-game-idler-git-*.pkg.tar.zst 2>/dev/null | head -1)
+pkg=$(find /build -maxdepth 1 -name 'steam-game-idler-git-*.pkg.tar.zst' -print -quit)
 if [[ -n "$pkg" ]]; then
-  ls -lh "$pkg"
-  echo "SUCCESS: package built"
+    ls -lh "$pkg"
+    echo "SUCCESS: package built"
 else
-  echo "FAIL: no .pkg.tar.zst found"
-  exit 1
+    echo "FAIL: no .pkg.tar.zst found"
+    exit 1
 fi

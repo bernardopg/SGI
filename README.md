@@ -68,15 +68,15 @@ SGI (parent)
 
 ### Technology Stack
 
-| Layer | Technology | Version |
-|---|---|---|
-| Desktop shell | Tauri | 2.8 |
-| Frontend | Next.js + React | 15 |
-| Styling | HeroUI + Tailwind | — |
-| Rust backend | tokio, serde, aes | stable |
-| Steam CLI | .NET / C# | 10.0 |
-| Package manager | pnpm | 10 |
-| Build system | cargo + dotnet publish | — |
+| Layer           | Technology             | Version |
+| --------------- | ---------------------- | ------- |
+| Desktop shell   | Tauri                  | 2.8     |
+| Frontend        | Next.js + React        | 15      |
+| Styling         | HeroUI + Tailwind      | —       |
+| Rust backend    | tokio, serde, aes      | stable  |
+| Steam CLI       | .NET / C#              | 10.0    |
+| Package manager | pnpm                   | 10      |
+| Build system    | cargo + dotnet publish | —       |
 
 ---
 
@@ -106,15 +106,15 @@ SGI/
 
 ## Feature Overview
 
-| Feature | Description |
-|---|---|
-| **Card Farming** | Idles games to accumulate Steam trading card drops. Up to 8 concurrent sessions on Linux, 32 on Windows. Each session runs in an isolated `/tmp/steam-game-idler/idlers/<pid>-<appid>-<nanos>/` directory. |
-| **Achievement Manager** | Unlock, lock, toggle individual achievements and reset/update stats. |
-| **Achievement Unlocker** | Automated sequential achievement unlocking with configurable interval. |
-| **Inventory Manager** | Browse and manage Steam inventory items. |
-| **Game List** | Full library with ownership check, playtime, and card data. |
-| **Custom Lists** | User-defined game groupings for batch operations. |
-| **Settings** | Per-user Steam Web API key, theme, automation rules, idle limits. |
+| Feature                  | Description                                                                                                                                                                                                |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Card Farming**         | Idles games to accumulate Steam trading card drops. Up to 8 concurrent sessions on Linux, 32 on Windows. Each session runs in an isolated `/tmp/steam-game-idler/idlers/<pid>-<appid>-<nanos>/` directory. |
+| **Achievement Manager**  | Unlock, lock, toggle individual achievements and reset/update stats.                                                                                                                                       |
+| **Achievement Unlocker** | Automated sequential achievement unlocking with configurable interval.                                                                                                                                     |
+| **Inventory Manager**    | Browse and manage Steam inventory items.                                                                                                                                                                   |
+| **Game List**            | Full library with ownership check, playtime, and card data.                                                                                                                                                |
+| **Custom Lists**         | User-defined game groupings for batch operations.                                                                                                                                                          |
+| **Settings**             | Per-user Steam Web API key, theme, automation rules, idle limits.                                                                                                                                          |
 
 ---
 
@@ -199,6 +199,7 @@ Start the app:
 ```
 
 The dev script:
+
 1. Validates the `SteamUtility.Cli` binary
 2. Kills orphan idle helpers from previous sessions
 3. Clears `/tmp/steam-game-idler` and `.next/dev`
@@ -249,33 +250,33 @@ dotnet run --project tests/SteamUtility.Tests -c Release
 
 `SteamUtility.Cli` is a self-contained single-file binary. It is spawned as a subprocess by the Tauri backend for every Steam operation.
 
-### Discovery commands *(no live Steam session required)*
+### Discovery commands _(no live Steam session required)_
 
-| Command | Description |
-|---|---|
-| `detect` | Locate Steam installation directory |
-| `libraries` | List Steam library folders |
-| `apps` | List all installed apps |
-| `compatdata` | List Proton compatibility data |
-| `compat-tools` | List installed Proton / compatibility tools |
-| `compat-mapping` | Map apps to their compatibility tool |
-| `compat-report` | Full compatibility report |
-| `state-report` | Overall Steam state summary |
+| Command          | Description                                 |
+| ---------------- | ------------------------------------------- |
+| `detect`         | Locate Steam installation directory         |
+| `libraries`      | List Steam library folders                  |
+| `apps`           | List all installed apps                     |
+| `compatdata`     | List Proton compatibility data              |
+| `compat-tools`   | List installed Proton / compatibility tools |
+| `compat-mapping` | Map apps to their compatibility tool        |
+| `compat-report`  | Full compatibility report                   |
+| `state-report`   | Overall Steam state summary                 |
 
-### Live commands *(active Steam session required)*
+### Live commands _(active Steam session required)_
 
-| Command | Description |
-|---|---|
-| `check_ownership <appid>` | Verify game ownership |
-| `idle <appid>` | Start idle session for card farming |
-| `get_achievement_data <appid>` | Fetch achievement definitions + progress |
-| `unlock_achievement <appid> <id>` | Unlock a single achievement |
-| `lock_achievement <appid> <id>` | Lock a single achievement |
-| `toggle_achievement <appid> <id>` | Toggle achievement state |
-| `unlock_all_achievements <appid>` | Unlock all achievements |
-| `lock_all_achievements <appid>` | Lock all achievements |
-| `update_stats <appid> <json>` | Write stat values |
-| `reset_all_stats <appid>` | Reset all stats to default |
+| Command                           | Description                              |
+| --------------------------------- | ---------------------------------------- |
+| `check_ownership <appid>`         | Verify game ownership                    |
+| `idle <appid>`                    | Start idle session for card farming      |
+| `get_achievement_data <appid>`    | Fetch achievement definitions + progress |
+| `unlock_achievement <appid> <id>` | Unlock a single achievement              |
+| `lock_achievement <appid> <id>`   | Lock a single achievement                |
+| `toggle_achievement <appid> <id>` | Toggle achievement state                 |
+| `unlock_all_achievements <appid>` | Unlock all achievements                  |
+| `lock_all_achievements <appid>`   | Lock all achievements                    |
+| `update_stats <appid> <json>`     | Write stat values                        |
+| `reset_all_stats <appid>`         | Reset all stats to default               |
 
 ---
 
@@ -331,34 +332,34 @@ prepare (5 min timeout)
 
 ### Job timing (v5.0.9, cache warm)
 
-| Job | Time | Notes |
-|---|---|---|
-| Resolve version | 2s | — |
-| Source tarball | 10s | — |
-| CI gate | ~3m | apt cache hit |
-| Build SteamUtility linux-x64 | **26s** | NuGet cache hit |
-| Build SteamUtility win-x64 | **1m45s** | NuGet cache hit |
-| AUR package | ~9m | pacman + makepkg |
-| Tauri bundle Linux | ~13m | rust-cache + apt cache |
-| Tauri bundle Windows | ~14m | rust-cache |
-| Push PKGBUILD to AUR | 24s | — |
-| Publish GitHub release | 28s | — |
-| **Total** | **~20 min** | **~12-14 min with warm Rust cache** |
+| Job                          | Time        | Notes                               |
+| ---------------------------- | ----------- | ----------------------------------- |
+| Resolve version              | 2s          | —                                   |
+| Source tarball               | 10s         | —                                   |
+| CI gate                      | ~3m         | apt cache hit                       |
+| Build SteamUtility linux-x64 | **26s**     | NuGet cache hit                     |
+| Build SteamUtility win-x64   | **1m45s**   | NuGet cache hit                     |
+| AUR package                  | ~9m         | pacman + makepkg                    |
+| Tauri bundle Linux           | ~13m        | rust-cache + apt cache              |
+| Tauri bundle Windows         | ~14m        | rust-cache                          |
+| Push PKGBUILD to AUR         | 24s         | —                                   |
+| Publish GitHub release       | 28s         | —                                   |
+| **Total**                    | **~20 min** | **~12-14 min with warm Rust cache** |
 
 ### Pinned action versions
 
-| Action | Version |
-|---|---|
-| `actions/checkout` | `v6.0.2` |
-| `actions/setup-node` | `v6.4.0` |
-| `pnpm/action-setup` | `v6.0.8` |
-| `actions/setup-dotnet` | `v5.2.0` |
-| `actions/upload-artifact` | `v7.0.1` |
-| `actions/download-artifact` | `v8.0.1` |
-| `actions/github-script` | `v9` |
-| `softprops/action-gh-release` | `v3` |
-| `swatinem/rust-cache` | `v2.9.1` |
-| `dtolnay/rust-toolchain` | `stable` |
+| Action                            | Version  |
+| --------------------------------- | -------- |
+| `actions/checkout`                | `v6.0.2` |
+| `actions/setup-node`              | `v6.4.0` |
+| `pnpm/action-setup`               | `v6.0.8` |
+| `actions/setup-dotnet`            | `v5.2.0` |
+| `actions/upload-artifact`         | `v7.0.1` |
+| `actions/download-artifact`       | `v8.0.1` |
+| `actions/github-script`           | `v9`     |
+| `softprops/action-gh-release`     | `v3`     |
+| `swatinem/rust-cache`             | `v2.9.1` |
+| `dtolnay/rust-toolchain`          | `stable` |
 | `awalsh128/cache-apt-pkgs-action` | `v1.4.3` |
 
 ---
@@ -382,18 +383,18 @@ Workflow: Release
 
 Each release produces:
 
-| Artifact | Platform |
-|---|---|
-| `steam-game-idler_X.Y.Z_amd64.deb` | Debian / Ubuntu |
-| `steam-game-idler-X.Y.Z-1.x86_64.rpm` | Fedora / openSUSE |
-| `steam-game-idler_X.Y.Z_amd64.AppImage` | Any Linux |
-| `steam-game-idler_X.Y.Z_x64-setup.exe` | Windows (NSIS installer) |
-| `steam-game-idler_X.Y.Z_x64-portable.zip` | Windows (portable) |
-| `steam-game-idler-git-X.Y.Z.rN.gHASH-1-x86_64.pkg.tar.zst` | Arch Linux |
-| `steam-game-idler-git.PKGBUILD` | AUR metadata |
-| `steam-game-idler-git.SRCINFO` | AUR metadata |
-| `sgi-X.Y.Z-source.tar.gz` | Vendored source (no `.git`) |
-| `SHA256SUMS` | Checksums for all above |
+| Artifact                                                   | Platform                    |
+| ---------------------------------------------------------- | --------------------------- |
+| `steam-game-idler_X.Y.Z_amd64.deb`                         | Debian / Ubuntu             |
+| `steam-game-idler-X.Y.Z-1.x86_64.rpm`                      | Fedora / openSUSE           |
+| `steam-game-idler_X.Y.Z_amd64.AppImage`                    | Any Linux                   |
+| `steam-game-idler_X.Y.Z_x64-setup.exe`                     | Windows (NSIS installer)    |
+| `steam-game-idler_X.Y.Z_x64-portable.zip`                  | Windows (portable)          |
+| `steam-game-idler-git-X.Y.Z.rN.gHASH-1-x86_64.pkg.tar.zst` | Arch Linux                  |
+| `steam-game-idler-git.PKGBUILD`                            | AUR metadata                |
+| `steam-game-idler-git.SRCINFO`                             | AUR metadata                |
+| `sgi-X.Y.Z-source.tar.gz`                                  | Vendored source (no `.git`) |
+| `SHA256SUMS`                                               | Checksums for all above     |
 
 ---
 
@@ -418,6 +419,7 @@ packaging/aur/
 ```
 
 The PKGBUILD:
+
 1. Clones the SGI workspace at the pinned release commit
 2. Publishes `SteamUtility.Cli` as a self-contained single-file binary
 3. Runs `pnpm tauri build --bundles deb`
@@ -429,12 +431,12 @@ The PKGBUILD:
 
 ### Linux
 
-| Distro family | Packages |
-|---|---|
+| Distro family   | Packages                                                                  |
+| --------------- | ------------------------------------------------------------------------- |
 | Debian / Ubuntu | `libwebkit2gtk-4.1-0` `libgtk-3-0` `libssl3` `libayatana-appindicator3-1` |
-| Arch / Manjaro | `webkit2gtk-4.1` `gtk3` `openssl` `libayatana-appindicator` |
-| Fedora | `webkit2gtk4.1` `gtk3` `openssl` `libappindicator-gtk3` |
-| openSUSE | `webkit2gtk3` `gtk3` `libopenssl3` `libappindicator3-1` |
+| Arch / Manjaro  | `webkit2gtk-4.1` `gtk3` `openssl` `libayatana-appindicator`               |
+| Fedora          | `webkit2gtk4.1` `gtk3` `openssl` `libappindicator-gtk3`                   |
+| openSUSE        | `webkit2gtk3` `gtk3` `libopenssl3` `libappindicator3-1`                   |
 
 ### Windows
 
@@ -454,12 +456,12 @@ No additional runtime dependencies. The NSIS installer and portable zip are self
 
 ## Repositories
 
-| Repo | Role |
-|---|---|
-| [bernardopg/SGI](https://github.com/bernardopg/SGI) | This workspace — release orchestrator |
-| [bernardopg/steam-game-idler](https://github.com/bernardopg/steam-game-idler) | Tauri/Next.js app fork with Linux support |
-| [bernardopg/steam-utility-multiplataform](https://github.com/bernardopg/steam-utility-multiplataform) | Cross-platform .NET 10 Steamworks CLI |
-| [zevnda/steam-game-idler](https://github.com/zevnda/steam-game-idler) | Upstream app (Windows-only) |
+| Repo                                                                                                  | Role                                      |
+| ----------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [bernardopg/SGI](https://github.com/bernardopg/SGI)                                                   | This workspace — release orchestrator     |
+| [bernardopg/steam-game-idler](https://github.com/bernardopg/steam-game-idler)                         | Tauri/Next.js app fork with Linux support |
+| [bernardopg/steam-utility-multiplataform](https://github.com/bernardopg/steam-utility-multiplataform) | Cross-platform .NET 10 Steamworks CLI     |
+| [zevnda/steam-game-idler](https://github.com/zevnda/steam-game-idler)                                 | Upstream app (Windows-only)               |
 
 <p align="center">
   <img src="https://capsule-render.vercel.app/api?type=waving&color=0:22C55E,60:1D4ED8,100:0F172A&height=120&section=footer" alt="footer" />

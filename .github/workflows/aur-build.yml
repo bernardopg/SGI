@@ -12,8 +12,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'packaging/aur/**'
-      - '.github/workflows/aur-build.yml'
+      - "packaging/aur/**"
+      - ".github/workflows/aur-build.yml"
 
 permissions:
   contents: read
@@ -28,10 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
-      # linuxdeploy/appimagetool self-mount via FUSE during the AppImage
-      # bundle step. Expose /dev/fuse and grant SYS_ADMIN so the AppImage
-      # runtime can mount inside the container.
-      options: --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined
     timeout-minutes: 90
 
     steps:
@@ -53,21 +49,27 @@ jobs:
       - name: Install Tauri system dependencies
         run: |
           # makepkg runs with -d (skip dep checks), so PKGBUILD makedepends are
-          # not auto-installed. xdg-utils provides xdg-open, needed by Tauri's
-          # AppImage bundler at bundle time.
+          # not auto-installed.
           pacman -S --noconfirm --needed \
-            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils \
-            fuse2
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
 
       - name: Checkout repository
         uses: actions/checkout@v6.0.3
 
       - name: Set up builder user
         run: |
+          set -euo pipefail
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
           mkdir -p /build
           cp packaging/aur/PKGBUILD packaging/aur/.SRCINFO /build/
+
+          # Test the exact PR merge commit (or dispatched commit), not the
+          # default branch currently published by the base PKGBUILD.
+          source_url="git+https://github.com/${GITHUB_REPOSITORY}.git#commit=${GITHUB_SHA}"
+          sed -i -E "s|^source=.*|source=('${source_url}')|" /build/PKGBUILD
+          sed -i -E "s|^\tsource = .*|\tsource = ${source_url}|" /build/.SRCINFO
+
           chown -R builder /build
 
       - name: Build package

@@ -423,10 +423,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
-      # linuxdeploy/appimagetool self-mount via FUSE during the AppImage
-      # bundle step. Expose /dev/fuse and grant SYS_ADMIN so the AppImage
-      # runtime can mount inside the container.
-      options: --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined
     timeout-minutes: 90
     outputs:
       pkgver: ${{ steps.pkgver.outputs.pkgver }}
@@ -445,12 +441,9 @@ jobs:
           # `rust` already provides cargo. makepkg runs with -d (skip dep
           # checks), so PKGBUILD makedepends are NOT auto-installed — every
           # build/runtime dep makepkg needs must be listed here explicitly.
-          # xdg-utils provides xdg-open, which Tauri's AppImage bundler shells
-          # out to at bundle time.
           pacman -S --noconfirm --needed \
             rust nodejs pnpm dotnet-sdk \
-            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils \
-            fuse2
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
 
       - uses: actions/checkout@v6.0.3
         with:
@@ -485,8 +478,8 @@ jobs:
           # the steam-game-idler submodule's tauri.conf.json, which may still be
           # the previous app version when cutting a parent SGI release. Pin the
           # generated AUR package to the release version resolved above.
-          sed -i -E "s|^  appver=[$][(]grep -m1 .*|  appver='${appver}'|" /build/PKGBUILD
-          grep -q "^  appver='${appver}'$" /build/PKGBUILD
+          sed -i -E "s|^[[:space:]]+appver=[$][(]grep -m1 .*|    appver='${appver}'|" /build/PKGBUILD
+          grep -Eq "^[[:space:]]+appver='${appver}'$" /build/PKGBUILD
 
           # Point the source line at the exact commit being released so the
           # AUR build is reproducible from this PKGBUILD without depending on
@@ -671,7 +664,7 @@ jobs:
     if: needs.prepare.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # criar/editar GitHub release
+      contents: write # criar/editar GitHub release
     steps:
       - uses: actions/checkout@v6.0.3
 
