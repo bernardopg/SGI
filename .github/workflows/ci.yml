@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
         with:
           submodules: recursive
 
@@ -78,7 +78,7 @@ jobs:
           pacman -Syu --noconfirm --needed git base-devel pacman-contrib
 
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
 
       - name: Validate .SRCINFO
         run: |
