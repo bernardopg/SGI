@@ -126,6 +126,10 @@ package() {
     bsdtar -xf "$deb" -C "$srcdir/deb-extract"
     bsdtar -xf "$srcdir/deb-extract"/data.tar.* -C "$pkgdir"
 
+    # Debian maintainer scripts may generate this host-level cache. Arch owns
+    # and refreshes it through hooks, so shipping it causes a pacman conflict.
+    rm -f "$pkgdir/usr/share/applications/mimeinfo.cache"
+
     # .pdb files embed absolute $srcdir paths; not needed at runtime
     find "$pkgdir" -name '*.pdb' -delete
 
