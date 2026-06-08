@@ -52,7 +52,8 @@ jobs:
           # not auto-installed. xdg-utils provides xdg-open, needed by Tauri's
           # AppImage bundler at bundle time.
           pacman -S --noconfirm --needed \
-            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
+            webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils \
+            fuse2
 
       - name: Checkout repository
         uses: actions/checkout@v6.0.3
