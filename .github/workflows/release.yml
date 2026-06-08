@@ -417,6 +417,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux:latest
+      # linuxdeploy/appimagetool self-mount via FUSE during the AppImage
+      # bundle step. Expose /dev/fuse and grant SYS_ADMIN so the AppImage
+      # runtime can mount inside the container.
+      options: --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor=unconfined
     timeout-minutes: 90
     outputs:
       pkgver: ${{ steps.pkgver.outputs.pkgver }}

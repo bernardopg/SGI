@@ -62,7 +62,7 @@
   - Install to `/usr/share/man/man1/`
 
 - [ ] **Flatpak manifest**
-  - Create `org.zevnda.SteamGameIdler.yml` in `packaging/flatpak/`
+  - Manifest `SteamGameIdler.yml` lives in `packaging/flatpak/`
   - Submit to Flathub
 
 - [ ] **Snapcraft.yaml**
@@ -75,7 +75,7 @@
   - Install to `hicolor/scalable/apps/`
 
 - [ ] **DBus activation**
-  - Register `com.zevnda.steam-game-idler` service
+  - Register `SteamGameIdler` service
   - Single-instance enforcement
   - CLI activation via `dbus-send`
 

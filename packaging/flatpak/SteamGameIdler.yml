@@ -1,4 +1,4 @@
-app-id: org.zevnda.SteamGameIdler
+app-id: SteamGameIdler
 runtime: org.freedesktop.Platform
 runtime-version: '24.08'
 sdk: org.freedesktop.Sdk
@@ -28,7 +28,7 @@ finish-args:
   # Discord Rich Presence
   - --talk-name=com.discordapp.Discord
   # D-Bus activation
-  - --own-name=org.zevnda.steam-game-idler
+  - --own-name=SteamGameIdler
 
 cleanup:
   - /include
@@ -47,7 +47,7 @@ modules:
       - dotnet publish src/SteamUtility.Cli/SteamUtility.Cli.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o /app/libs
     sources:
       - type: git
-        url: https://github.com/zevnda/steam-utility-multiplataform
+        url: https://github.com/bernardopg/steam-utility-multiplataform
         branch: main
 
   - name: steam-game-idler
@@ -57,7 +57,7 @@ modules:
       - exit 1
     sources:
       - type: git
-        url: https://github.com/zevnda/steam-game-idler
+        url: https://github.com/bernardopg/steam-game-idler
         branch: main
     build-options:
       env:
