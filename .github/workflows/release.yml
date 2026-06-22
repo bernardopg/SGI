@@ -105,7 +105,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
 
@@ -177,7 +177,7 @@ jobs:
             runner: windows-latest
             output_name: SteamUtility.exe
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
 
@@ -234,7 +234,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
 
@@ -337,7 +337,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
 
@@ -445,7 +445,7 @@ jobs:
             rust nodejs pnpm dotnet-sdk \
             webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
 
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
           fetch-depth: 0
@@ -551,7 +551,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           submodules: recursive
           fetch-depth: 1
@@ -670,7 +670,7 @@ jobs:
     permissions:
       contents: write # criar/editar GitHub release
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
 
       - uses: actions/download-artifact@v8.0.1
         with:
