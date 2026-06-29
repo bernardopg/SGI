@@ -110,7 +110,7 @@ jobs:
           submodules: recursive
 
       - name: Install Tauri system dependencies
-        uses: awalsh128/cache-apt-pkgs-action@v1.6.1
+        uses: awalsh128/cache-apt-pkgs-action@v1.6.2
         with:
           packages: >-
             libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev
@@ -181,7 +181,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-dotnet@v5.3.0
+      - uses: actions/setup-dotnet@v5.4.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
           cache: true
@@ -239,7 +239,7 @@ jobs:
           submodules: recursive
 
       - name: Install Tauri + bundler system deps
-        uses: awalsh128/cache-apt-pkgs-action@v1.6.1
+        uses: awalsh128/cache-apt-pkgs-action@v1.6.2
         with:
           packages: >-
             libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev
