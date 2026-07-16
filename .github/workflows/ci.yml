@@ -18,32 +18,38 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           submodules: recursive
 
       - name: Install Tauri system dependencies
-        uses: awalsh128/cache-apt-pkgs-action@v1.6.1
-        with:
-          packages: >-
-            libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
-          version: 1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "24"
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6.0.9
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
         with:
           version: 10
 
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@35a842e360814583e976785eeda0bd0655cb8e83 # 1.97.0
+        with:
+          toolchain: 1.97.0
 
-      - uses: swatinem/rust-cache@v2.9.1
+      - name: Setup .NET
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
           workspaces: "steam-game-idler/src-tauri -> target"
 
@@ -53,11 +59,28 @@ jobs:
 
       - name: Typecheck frontend
         working-directory: steam-game-idler
-        run: pnpm typecheck
+        run: |
+          pnpm check:tauri-versions
+          pnpm typecheck
+
+      - name: Lint frontend
+        working-directory: steam-game-idler
+        run: pnpm lint
 
       - name: Check Tauri backend
         working-directory: steam-game-idler/src-tauri
-        run: cargo check
+        run: cargo check --locked
+
+      - name: Test Tauri backend
+        working-directory: steam-game-idler/src-tauri
+        run: cargo test --locked
+
+      - name: Build and test SteamUtility CLI
+        working-directory: steam-utility-multiplataform
+        run: |
+          dotnet restore steam-utility-multiplataform.sln
+          dotnet build steam-utility-multiplataform.sln -c Release --no-restore
+          dotnet run --project tests/SteamUtility.Tests -c Release --no-build
 
   aur-metadata:
     name: AUR metadata
@@ -78,7 +101,7 @@ jobs:
           pacman -Syu --noconfirm --needed git base-devel pacman-contrib
 
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Validate .SRCINFO
         run: |

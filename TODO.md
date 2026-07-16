@@ -2,12 +2,12 @@
 
 ## High Priority
 
-- [ ] **MIME types + app cache file handler**
+- [x] **MIME types + app cache file handler**
   - Register `application/x-steam-app-cache-file`
   - Update PKGBUILD `.desktop` `MimeType=` entry
   - Keep runtime handling out of scope unless a real deep-link path is added
 
-- [ ] **AppStream metainfo.xml**
+- [x] **AppStream metainfo.xml**
   - Create `steam-game-idler.metainfo.xml` in `packaging/aur/`
   - Include: name, summary, description, screenshots, categories, releases, provides
   - Install to `/usr/share/metainfo/` in PKGBUILD
@@ -18,7 +18,7 @@
   - Add `linux.mimeTypes` array
   - Add `linux.desktopTemplate` with `Categories=Game;Utility;`
 
-- [ ] **PKGBUILD improvements**
+- [x] **PKGBUILD improvements**
   - Add `optdepends`: `webkit2gtk-4.2`, `xdg-desktop-portal`, `libappindicator-gtk3`, `gstreamer`
   - Pin source to tag for stable: `source=("git+https://github.com/bernardopg/SGI.git#tag=v${pkgver}")`
   - Build AppImage: `pnpm tauri build --bundles deb,appimage`
@@ -37,7 +37,7 @@
   - Test in Flatpak/sandboxed environment
   - Fallback to native dialogs when portal unavailable
 
-- [ ] **Systemd user service**
+- [x] **Systemd user service**
   - Create `steam-game-idler.service` in `packaging/aur/`
   - Install to `/usr/lib/systemd/user/`
   - Enable `systemctl --user enable steam-game-idler` for true boot start
@@ -53,17 +53,17 @@
 
 ## Low Priority / Polish
 
-- [ ] **Shell completions**
+- [x] **Shell completions**
   - Generate zsh/fish/bash completions for `SteamUtility.Cli`
   - Install to `/usr/share/zsh/site-functions/`, `/usr/share/fish/vendor_completions.d/`, `/usr/share/bash-completion/completions/`
 
-- [ ] **Man pages**
+- [x] **Man pages**
   - Create `steam-game-idler.1` and `SteamUtility.Cli.1`
   - Install to `/usr/share/man/man1/`
 
 - [ ] **Flatpak manifest**
-  - Manifest `SteamGameIdler.yml` lives in `packaging/flatpak/`
-  - Submit to Flathub
+  - Manifest `SteamGameIdler.yml` is intentionally a non-building draft pending SDK extensions for Node/pnpm and .NET.
+  - Complete the build modules and validate locally before submitting to Flathub.
 
 - [ ] **Snapcraft.yaml**
   - Create `snapcraft.yaml` in `packaging/snap/`

@@ -350,17 +350,16 @@ prepare (5 min timeout)
 
 | Action                            | Version  |
 | --------------------------------- | -------- |
-| `actions/checkout`                | `v6.0.2` |
+| `actions/checkout`                | `v7.0.0` |
 | `actions/setup-node`              | `v6.4.0` |
-| `pnpm/action-setup`               | `v6.0.8` |
-| `actions/setup-dotnet`            | `v5.2.0` |
+| `pnpm/action-setup`               | `v6.0.9` |
+| `actions/setup-dotnet`            | `v5.4.0` |
 | `actions/upload-artifact`         | `v7.0.1` |
 | `actions/download-artifact`       | `v8.0.1` |
 | `actions/github-script`           | `v9`     |
 | `softprops/action-gh-release`     | `v3`     |
 | `swatinem/rust-cache`             | `v2.9.1` |
-| `dtolnay/rust-toolchain`          | `stable` |
-| `awalsh128/cache-apt-pkgs-action` | `v1.4.3` |
+| `dtolnay/rust-toolchain`          | `1.97.0` |
 
 ---
 
@@ -409,6 +408,8 @@ yay -S steam-game-idler-git
 # Local publish (requires AUR_SSH_PRIVATE_KEY)
 AUR_PACKAGE=steam-game-idler-git ./scripts/publish-aur.sh
 ```
+
+For a full local package verification, see [dependency management](docs/DEPENDENCY_MANAGEMENT.md).
 
 Files:
 
