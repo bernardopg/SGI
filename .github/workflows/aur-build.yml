@@ -13,6 +13,10 @@ on:
   pull_request:
     paths:
       - "packaging/aur/**"
+      - "steam-game-idler"
+      - "steam-utility-multiplataform"
+      - ".gitmodules"
+      - ".docker-aur-build.sh"
       - ".github/workflows/aur-build.yml"
 
 permissions:
@@ -54,7 +58,7 @@ jobs:
             webkit2gtk-4.1 gtk3 openssl libayatana-appindicator librsvg xdg-utils
 
       - name: Checkout repository
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Set up builder user
         run: |

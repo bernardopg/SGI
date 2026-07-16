@@ -17,7 +17,7 @@ pacman -Syu --noconfirm --needed
 pacman -S --noconfirm --needed base-devel git sudo
 
 echo "[2/6] Install makedepends"
-pacman -S --noconfirm --needed cargo rust nodejs pnpm dotnet-sdk
+pacman -S --noconfirm --needed rust nodejs pnpm dotnet-sdk xdg-utils
 
 echo "[3/6] Install Tauri system deps (webkit2gtk-4.1 is ~35 MB, patience...)"
 pacman -S --noconfirm --needed \
