@@ -46,6 +46,9 @@ logs/
 tmp/
 cache/
 artifacts/
+.headroom/
+.tokensave/
+AGENTS.md
 
 # Python
 __pycache__/
