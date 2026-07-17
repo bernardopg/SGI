@@ -125,8 +125,6 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - uses: dtolnay/rust-toolchain@35a842e360814583e976785eeda0bd0655cb8e83 # 1.97.0
-        with:
-          toolchain: 1.97.0
 
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -272,8 +270,6 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - uses: dtolnay/rust-toolchain@35a842e360814583e976785eeda0bd0655cb8e83 # 1.97.0
-        with:
-          toolchain: 1.97.0
 
       - uses: swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
@@ -368,8 +364,6 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
 
       - uses: dtolnay/rust-toolchain@35a842e360814583e976785eeda0bd0655cb8e83 # 1.97.0
-        with:
-          toolchain: 1.97.0
 
       - uses: swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
         with:
