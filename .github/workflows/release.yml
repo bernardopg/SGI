@@ -20,10 +20,8 @@ name: Release
 #   TAURI_SIGNING_PRIVATE_KEY  optional, signs the Tauri updater bundles
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  optional, password for above
 #
-# The production panic in src-tauri/src/lib.rs ("No obfuscated API key…") is
-# patched out the same way the PKGBUILD does it, so distribution binaries
-# launch without a build-time KEY secret. Users configure their own Steam Web
-# API key in the app's Settings panel.
+# Production binaries intentionally work without a build-time KEY secret;
+# users configure their own Steam Web API key in the app's Settings panel.
 
 on:
   push:
