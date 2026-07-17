@@ -61,6 +61,7 @@ jobs:
         working-directory: steam-game-idler
         run: |
           pnpm check:tauri-versions
+          pnpm check:release-version
           pnpm typecheck
 
       - name: Lint frontend

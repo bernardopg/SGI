@@ -7,6 +7,9 @@ _pkgname=steam-game-idler
 # commit history. The AUR publish workflow updates this line before pushing.
 pkgver=0.0.0.r0.0000000
 pkgrel=1
+# Release automation pins this to the GitHub release version. Normal AUR builds
+# leave it empty and build the version declared by the checked-out source.
+_release_version=''
 pkgdesc='Idle Steam games and farm trading cards with Linux support'
 arch=('x86_64')
 url='https://github.com/bernardopg/SGI'
@@ -56,6 +59,13 @@ prepare() {
 
     cd steam-game-idler
 
+    local release_version="$_release_version"
+    if [[ -z "$release_version" ]]; then
+        release_version=$(node -p "require('./package.json').version")
+    fi
+    node scripts/set-release-version.mjs "$release_version"
+    node scripts/check-release-version.mjs "$release_version"
+
     # pnpm 10+ enforces strictDepBuilds: native deps with postinstall scripts
     # (sharp, esbuild, @heroui/shared-utils) must be explicitly approved or the
     # install aborts with ERR_PNPM_IGNORED_BUILDS. Older submodule pointers (pre-
@@ -95,6 +105,7 @@ build() {
 
     # pacman handles updates; disable Tauri updater artifact generation (requires a signing key)
     sed -i 's/"createUpdaterArtifacts": "[^"]*"/"createUpdaterArtifacts": false/' src-tauri/tauri.conf.json
+    pnpm check:release-version
 
     export NEXT_TELEMETRY_DISABLED=1
     export TAURI_CI=1

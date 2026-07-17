@@ -141,6 +141,7 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm check:tauri-versions
+          pnpm check:release-version
           pnpm typecheck
           pnpm lint
 
@@ -491,6 +492,7 @@ jobs:
           appver="${{ needs.prepare.outputs.version }}"
           pkgver="${{ steps.pkgver.outputs.pkgver }}"
           sed -i -E "s/^pkgver=.*/pkgver=${pkgver}/" /build/PKGBUILD
+          sed -i -E "s/^_release_version=.*/_release_version='${appver}'/" /build/PKGBUILD
           sed -i -E "s/^\tpkgver = .*/\tpkgver = ${pkgver}/" /build/.SRCINFO
 
           # makepkg runs pkgver() and would otherwise read the app version from
@@ -499,6 +501,7 @@ jobs:
           # generated AUR package to the release version resolved above.
           sed -i -E "s|^[[:space:]]+appver=[$][(]grep -m1 .*|    appver='${appver}'|" /build/PKGBUILD
           grep -Eq "^[[:space:]]+appver='${appver}'$" /build/PKGBUILD
+          grep -Eq "^_release_version='${appver}'$" /build/PKGBUILD
 
           # Point the source line at the exact commit being released so the
           # AUR build is reproducible from this PKGBUILD without depending on
@@ -574,6 +577,15 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Pin runtime manifests in source distribution
+        uses: ./.github/actions/pin-tauri-version
+        with:
+          version: ${{ needs.prepare.outputs.version }}
 
       - name: Pack source tarball
         run: |
