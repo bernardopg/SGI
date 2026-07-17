@@ -1,8 +1,8 @@
-name: Pin Tauri version
+name: Prepare Tauri release runtime
 description: >
-  Patches all runtime manifests (version + createUpdaterArtifacts), removes the
-  production API-key panic from lib.rs, and injects pnpm allowBuilds entries
-  when the submodule predates that field.
+  Verifies that the checked-in runtime manifests match the release version,
+  disables updater artifacts for package-managed Linux builds, and injects
+  pnpm allowBuilds entries when the submodule predates that field.
 inputs:
   version:
     description: Semver version string (e.g. 5.0.8)
@@ -14,18 +14,15 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Patch runtime manifests + lib.rs + pnpm-workspace.yaml
+    - name: Verify runtime manifests + prepare release-only settings
       shell: bash
       working-directory: ${{ inputs.working-directory }}
       run: |
         set -euo pipefail
         version="${{ inputs.version }}"
-        node scripts/set-release-version.mjs "$version"
         node scripts/check-release-version.mjs "$version"
         sed -i 's/"createUpdaterArtifacts":[[:space:]]*"[^"]*"/"createUpdaterArtifacts": false/' \
           src-tauri/tauri.conf.json
-        sed -i 's|panic!("No obfuscated API key available in production build");|// embedded key not provided — user configures via Settings|' \
-          src-tauri/src/lib.rs
         if ! grep -q '^allowBuilds:' pnpm-workspace.yaml; then
           {
             echo 'allowBuilds:'

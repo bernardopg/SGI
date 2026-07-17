@@ -141,7 +141,7 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           pnpm check:tauri-versions
-          pnpm check:release-version
+          pnpm check:release-version "${{ needs.prepare.outputs.version }}"
           pnpm typecheck
           pnpm lint
 
@@ -288,7 +288,7 @@ jobs:
       - name: Make SteamUtility.Cli executable
         run: chmod +x steam-game-idler/src-tauri/libs/SteamUtility.Cli
 
-      - name: Pin tauri.conf.json version + disable updater + drop API panic
+      - name: Prepare Tauri release runtime
         uses: ./.github/actions/pin-tauri-version
         with:
           version: ${{ needs.prepare.outputs.version }}
@@ -381,7 +381,7 @@ jobs:
           name: steamutility-win-x64
           path: steam-game-idler/src-tauri/libs
 
-      - name: Pin version + disable updater + drop API panic
+      - name: Prepare Tauri release runtime
         uses: ./.github/actions/pin-tauri-version
         with:
           version: ${{ needs.prepare.outputs.version }}
@@ -582,7 +582,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Pin runtime manifests in source distribution
+      - name: Prepare runtime for source distribution
         uses: ./.github/actions/pin-tauri-version
         with:
           version: ${{ needs.prepare.outputs.version }}
