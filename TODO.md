@@ -12,17 +12,22 @@
   - Include: name, summary, description, screenshots, categories, releases, provides
   - Install to `/usr/share/metainfo/` in PKGBUILD
 
-- [ ] **tauri.conf.json Linux defaults**
-  - Set `createUpdaterArtifacts: false` for Linux
-  - Add `linux.appimage` config with `bundleMediaFramework: true`
-  - Add `linux.mimeTypes` array
-  - Add `linux.desktopTemplate` with `Categories=Game;Utility;`
+- [x] **tauri.conf.json Linux defaults**
+  - Set `bundle.linux.appimage.bundleMediaFramework: true` (already present)
+  - Added `bundle.fileAssociations` for `application/x-steam-app-cache-file` (generates MimeType= natively in .desktop)
+  - Added `bundle.linux.deb.desktopTemplate` and `bundle.linux.rpm.desktopTemplate` pointing to `src-tauri/templates/linux.desktop.hbs`
+  - Custom template features:
+    - `Categories={{categories}}Utility;` (appends Utility to Tauri category)
+    - `Comment={{long_description}}` (avoids duplicating the application name)
+    - `StartupWMClass={{name}}` (avoids quoting issues)
+    - Preserves `{{#if mime_type}}` block for file associations
+  - Note: `createUpdaterArtifacts` remains `"v1Compatible"` in the base config for standalone upstream builds; SGI package builds disable it through the pin action and PKGBUILD because this repository does not publish updater metadata
 
 - [x] **PKGBUILD improvements**
   - Add `optdepends`: `webkit2gtk-4.2`, `xdg-desktop-portal`, `libappindicator-gtk3`, `gstreamer`
-  - Pin source to tag for stable: `source=("git+https://github.com/bernardopg/SGI.git#tag=v${pkgver}")`
-  - Build AppImage: `pnpm tauri build --bundles deb,appimage`
-  - Install metainfo.xml and AppImage
+  - Pin the published AUR source to the exact SGI release commit
+  - Build AppImage separately in the release workflow; keep the AUR package based on the `.deb` bundle
+  - Install AppStream metainfo in the AUR package
   - Add `check()` function for basic smoke test
 
 - [ ] **Wayland fractional scaling fix**

@@ -1,8 +1,8 @@
 name: Prepare Tauri release runtime
 description: >
   Verifies that the checked-in runtime manifests match the release version,
-  disables updater artifacts for package-managed Linux builds, and injects
-  pnpm allowBuilds entries when the submodule predates that field.
+  disables updater artifacts for SGI package builds, and injects pnpm
+  allowBuilds entries when the submodule predates that field.
 inputs:
   version:
     description: Semver version string (e.g. 5.0.8)
