@@ -111,7 +111,7 @@ jobs:
             libwebkit2gtk-4.1-dev libssl-dev libgtk-3-dev libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -228,7 +228,7 @@ jobs:
           ls -la
 
       - name: Upload artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: steamutility-${{ matrix.runtime }}
           path: steam-utility-multiplataform/artifacts/${{ matrix.output_name }}
@@ -256,7 +256,7 @@ jobs:
             libjavascriptcoregtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
             squashfs-tools patchelf rpm
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -271,7 +271,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.Cli (linux-x64)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: steamutility-linux-x64
           path: steam-game-idler/src-tauri/libs
@@ -327,7 +327,7 @@ jobs:
           ls -lh stage/
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux-bundle
           path: stage/*
@@ -347,7 +347,7 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -362,7 +362,7 @@ jobs:
           workspaces: "steam-game-idler/src-tauri -> target"
 
       - name: Download SteamUtility.exe (win-x64)
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: steamutility-win-x64
           path: steam-game-idler/src-tauri/libs
@@ -407,7 +407,7 @@ jobs:
           Get-ChildItem $stage | Format-Table Name,Length
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-bundle
           path: stage/*
@@ -535,7 +535,7 @@ jobs:
           ! grep -qE '^StartupWMClass=".*"' "$desktop"
 
       - name: Upload AUR artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: aur-bundle
           path: |
@@ -561,7 +561,7 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -591,7 +591,7 @@ jobs:
 
           ls -lh "stage/${name}.tar.gz"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: source-tarball
           path: stage/*.tar.gz
@@ -609,7 +609,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: aur-bundle
           path: aur-staged
@@ -686,7 +686,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
 
